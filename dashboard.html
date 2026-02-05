@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - Image-Based Template</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        select, input {
+            padding: 10px 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 5px;
+            font-size: 14px;
+            min-width: 150px;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #38a169;
+        }
+
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .stat-card .number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-card.incomplete .number {
+            color: #f56565;
+        }
+
+        .stat-card.complete .number {
+            color: #48bb78;
+        }
+
+        .template-config {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .template-config h2 {
+            margin-bottom: 15px;
+            color: #2d3748;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .alert-info {
+            background: #bee3f8;
+            color: #2c5282;
+            border-left: 4px solid #3182ce;
+        }
+
+        .alert-success {
+            background: #c6f6d5;
+            color: #22543d;
+            border-left: 4px solid #48bb78;
+        }
+
+        .alert-warning {
+            background: #fef5e7;
+            color: #975a16;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .template-upload {
+            border: 3px dashed #667eea;
+            padding: 40px;
+            text-align: center;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f7fafc;
+            margin-bottom: 20px;
+        }
+
+        .template-upload:hover {
+            border-color: #5568d3;
+            background: #edf2f7;
+        }
+
+        .template-upload.has-template {
+            border-color: #48bb78;
+            background: #f0fff4;
+        }
+
+        .template-preview {
+            max-width: 100%;
+            max-height: 400px;
+            margin: 20px auto;
+            display: none;
+            border: 2px solid #e1e8ed;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .template-preview.show {
+            display: block;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 13px;
+        }
+
+        .form-group input, .form-group textarea {
+            padding: 10px;
+            border: 2px solid #e1e8ed;
+            border-radius: 5px;
+            font-family: inherit;
+        }
+
+        .form-group small {
+            color: #718096;
+            font-size: 12px;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .position-helper {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #e1e8ed;
+            margin-top: 15px;
+        }
+
+        .position-helper h4 {
+            margin-bottom: 10px;
+            color: #2d3748;
+        }
+
+        .position-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .position-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .position-input label {
+            min-width: 60px;
+            font-size: 12px;
+        }
+
+        .position-input input {
+            flex: 1;
+            padding: 5px 10px;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f7fafc;
+            border-bottom: 2px solid #e1e8ed;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        tr:hover {
+            background: #f7fafc;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-complete {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-incomplete {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .score {
+            font-weight: 600;
+        }
+
+        .score.high {
+            color: #48bb78;
+        }
+
+        .score.medium {
+            color: #ed8936;
+        }
+
+        .score.low {
+            color: #f56565;
+        }
+
+        .bulk-actions {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .bulk-actions.show {
+            display: block;
+        }
+
+        .selected-count {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Teacher Dashboard</h1>
+        <p>Image-Based Template System - Upload Your Letterhead</p>
+    </div>
+
+    <!-- Template Upload Section -->
+    <div class="template-config">
+        <h2>📄 Upload Your Letterhead Template</h2>
+        
+        <div class="alert alert-info">
+            <strong>How it works:</strong><br>
+            1. Upload your school letterhead (PNG/PDF with header & footer)<br>
+            2. Configure teacher name and assignment (these stay the same for all letters)<br>
+            3. Click "Generate Notice" for any incomplete student<br>
+            4. <strong>Student name and date are pulled automatically from the database!</strong><br>
+            5. PDF downloads with student info overlaid on your letterhead
+        </div>
+
+        <div id="templateUpload" class="template-upload" onclick="document.getElementById('templateInput').click()">
+            <p style="font-size: 24px; margin-bottom: 10px;">📤</p>
+            <p style="font-weight: 600; margin-bottom: 5px;">Click to Upload Letterhead Template</p>
+            <p style="font-size: 13px; color: #666;">PNG, JPG, or PDF • Recommended: 8.5" x 11" at 300 DPI</p>
+            <p style="font-size: 12px; color: #999; margin-top: 10px;">Your header and footer will remain untouched!</p>
+        </div>
+        <input type="file" id="templateInput" accept="image/png,image/jpeg,application/pdf" style="display: none;">
+
+        <img id="templatePreview" class="template-preview" alt="Template preview">
+
+        <!-- Text Position Configuration -->
+        <div id="positionConfig" style="display: none;">
+            <div class="alert alert-success">
+                ✅ Template loaded! Now configure where the letter content should appear.
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Teacher Name</label>
+                    <input type="text" id="teacherName" value="Ms. Anderson" placeholder="Your name">
+                    <small>Will appear in the signature</small>
+                </div>
+                <div class="form-group">
+                    <label>Assignment Name</label>
+                    <input type="text" id="assignmentName" value="Sentence Types Quiz" placeholder="Assignment name">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 15px;">
+                <label>Custom Message (Optional)</label>
+                <textarea id="customMessage" placeholder="Leave blank for default message, or customize here...
+
+Default message will be:
+'This letter is to inform you that [STUDENT NAME] has not completed the assigned homework: [ASSIGNMENT].
+
+Please ensure your child completes this assignment as soon as possible.'"></textarea>
+                <small>Leave blank to use default message</small>
+            </div>
+
+            <div class="position-helper">
+                <h4>📐 Text Position Settings</h4>
+                <p style="font-size: 12px; color: #666; margin-bottom: 15px;">
+                    Adjust where text appears on your template. PDF coordinates: X (horizontal), Y (vertical from top).<br>
+                    Standard page is 210mm wide × 297mm tall. Adjust these values to fit your letterhead.
+                </p>
+                
+                <div class="position-grid">
+                    <div class="position-input">
+                        <label>Start X:</label>
+                        <input type="number" id="contentX" value="20" min="0" max="190">
+                        <small>mm</small>
+                    </div>
+                    <div class="position-input">
+                        <label>Start Y:</label>
+                        <input type="number" id="contentY" value="80" min="0" max="250">
+                        <small>mm</small>
+                    </div>
+                    <div class="position-input">
+                        <label>Max Width:</label>
+                        <input type="number" id="contentWidth" value="170" min="50" max="200">
+                        <small>mm</small>
+                    </div>
+                    <div class="position-input">
+                        <label>Line Height:</label>
+                        <input type="number" id="lineHeight" value="7" min="4" max="12">
+                        <small>mm</small>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning" style="margin-top: 15px;">
+                    <strong>💡 Tips:</strong><br>
+                    • Start Y should be below your header (e.g., 80mm if header is 60mm tall)<br>
+                    • Leave room for footer at bottom (don't go past 250mm Y position)<br>
+                    • Test with one PDF first, then adjust if needed!
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="testPDF()" style="margin-top: 15px; margin-right: 10px;">
+                🧪 Generate Test PDF
+            </button>
+            <button class="btn btn-secondary" onclick="saveTemplateSettings()" style="margin-top: 15px;">
+                💾 Save Settings
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stats">
+        <div class="stat-card">
+            <h3>Total Students</h3>
+            <div class="number" id="totalStudents">0</div>
+        </div>
+        <div class="stat-card complete">
+            <h3>Completed</h3>
+            <div class="number" id="completedCount">0</div>
+        </div>
+        <div class="stat-card incomplete">
+            <h3>Incomplete</h3>
+            <div class="number" id="incompleteCount">0</div>
+        </div>
+        <div class="stat-card">
+            <h3>Average Score</h3>
+            <div class="number" id="avgScore">0%</div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <div class="control-group">
+            <label>Filter by Status</label>
+            <select id="statusFilter" onchange="filterStudents()">
+                <option value="all">All Students</option>
+                <option value="incomplete">Incomplete Only</option>
+                <option value="complete">Complete Only</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>Date Range</label>
+            <input type="date" id="dateFilter" value="">
+        </div>
+
+        <div class="control-group" style="justify-content: flex-end; margin-left: auto;">
+            <label>&nbsp;</label>
+            <button class="btn btn-primary" onclick="refreshData()">🔄 Refresh Data</button>
+        </div>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div class="bulk-actions" id="bulkActionsBar">
+        <span class="selected-count" id="selectedCount">0 selected</span>
+        <button class="btn btn-danger btn-small" onclick="generateBulkPDFs()">📄 Generate PDFs for Selected</button>
+        <button class="btn btn-secondary btn-small" onclick="clearSelection()">Clear Selection</button>
+    </div>
+
+    <!-- Student Table -->
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                    <th>Student Name</th>
+                    <th>Status</th>
+                    <th>Score</th>
+                    <th>Date Completed</th>
+                    <th>Time Taken</th>
+                    <th>Suspicious Activity</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="studentTableBody">
+                <!-- Dynamic content -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Mock student data
+        let studentsData = [
+            { id: 1, name: "Emma Johnson", completed: true, score: 90, date: "2026-02-04", timeSeconds: 245, tabSwitches: 1, copyAttempts: 0 },
+            { id: 2, name: "Liam Smith", completed: false, score: 0, date: null, timeSeconds: 0, tabSwitches: 0, copyAttempts: 0 },
+            { id: 3, name: "Olivia Brown", completed: true, score: 80, date: "2026-02-03", timeSeconds: 312, tabSwitches: 0, copyAttempts: 0 },
+            { id: 4, name: "Noah Davis", completed: false, score: 0, date: null, timeSeconds: 0, tabSwitches: 0, copyAttempts: 0 },
+            { id: 5, name: "Ava Martinez", completed: true, score: 100, date: "2026-02-05", timeSeconds: 198, tabSwitches: 0, copyAttempts: 0 },
+            { id: 6, name: "Ethan Wilson", completed: false, score: 0, date: null, timeSeconds: 0, tabSwitches: 0, copyAttempts: 0 },
+            { id: 7, name: "Sophia Garcia", completed: true, score: 70, date: "2026-02-02", timeSeconds: 389, tabSwitches: 5, copyAttempts: 3 },
+            { id: 8, name: "Mason Rodriguez", completed: true, score: 85, date: "2026-02-04", timeSeconds: 267, tabSwitches: 2, copyAttempts: 0 },
+            { id: 9, name: "Isabella Lee", completed: false, score: 0, date: null, timeSeconds: 0, tabSwitches: 0, copyAttempts: 0 },
+            { id: 10, name: "Lucas Taylor", completed: true, score: 95, date: "2026-02-05", timeSeconds: 223, tabSwitches: 0, copyAttempts: 0 }
+        ];
+
+        let selectedStudents = new Set();
+        let templateImage = null;
+
+        // Template settings
+        let templateSettings = {
+            teacherName: "Ms. Anderson",
+            assignmentName: "Sentence Types Quiz",
+            customMessage: "",
+            contentX: 20,
+            contentY: 80,
+            contentWidth: 170,
+            lineHeight: 7
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTemplateSettings();
+            renderStudents();
+            updateStats();
+            document.getElementById('dateFilter').valueAsDate = new Date();
+
+            // Template upload handler
+            document.getElementById('templateInput').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        templateImage = event.target.result;
+                        document.getElementById('templatePreview').src = templateImage;
+                        document.getElementById('templatePreview').classList.add('show');
+                        document.getElementById('templateUpload').classList.add('has-template');
+                        document.getElementById('positionConfig').style.display = 'block';
+                        
+                        // Save to localStorage
+                        localStorage.setItem('letterheadTemplate', templateImage);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        });
+
+        function saveTemplateSettings() {
+            templateSettings.teacherName = document.getElementById('teacherName').value;
+            templateSettings.assignmentName = document.getElementById('assignmentName').value;
+            templateSettings.customMessage = document.getElementById('customMessage').value;
+            templateSettings.contentX = parseInt(document.getElementById('contentX').value);
+            templateSettings.contentY = parseInt(document.getElementById('contentY').value);
+            templateSettings.contentWidth = parseInt(document.getElementById('contentWidth').value);
+            templateSettings.lineHeight = parseInt(document.getElementById('lineHeight').value);
+            
+            localStorage.setItem('templateSettings', JSON.stringify(templateSettings));
+            
+            alert('✅ Template settings saved!');
+        }
+
+        function loadTemplateSettings() {
+            const saved = localStorage.getItem('templateSettings');
+            if (saved) {
+                templateSettings = JSON.parse(saved);
+                document.getElementById('teacherName').value = templateSettings.teacherName;
+                document.getElementById('assignmentName').value = templateSettings.assignmentName;
+                document.getElementById('customMessage').value = templateSettings.customMessage || '';
+                document.getElementById('contentX').value = templateSettings.contentX;
+                document.getElementById('contentY').value = templateSettings.contentY;
+                document.getElementById('contentWidth').value = templateSettings.contentWidth;
+                document.getElementById('lineHeight').value = templateSettings.lineHeight;
+            }
+            
+            const savedTemplate = localStorage.getItem('letterheadTemplate');
+            if (savedTemplate) {
+                templateImage = savedTemplate;
+                document.getElementById('templatePreview').src = templateImage;
+                document.getElementById('templatePreview').classList.add('show');
+                document.getElementById('templateUpload').classList.add('has-template');
+                document.getElementById('positionConfig').style.display = 'block';
+            }
+        }
+
+        function generatePDF(studentId, isTest = false) {
+            if (!templateImage) {
+                alert('❌ Please upload a letterhead template first!');
+                return;
+            }
+
+            // Get student data from database (studentsData array)
+            const student = isTest ? 
+                { id: 0, name: "TEST STUDENT", completed: false, date: null } : 
+                studentsData.find(s => s.id === studentId);
+            
+            if (!student && !isTest) return;
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Add template as background (full page)
+            doc.addImage(templateImage, 'PNG', 0, 0, 210, 297);
+
+            // Use TODAY's date (when letter is generated)
+            const today = new Date().toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+
+            // Get settings (teacher name and assignment from settings, student info from database)
+            const startX = templateSettings.contentX;
+            let yPos = templateSettings.contentY;
+            const maxWidth = templateSettings.contentWidth;
+            const lineSpacing = templateSettings.lineHeight;
+
+            // Set text styling
+            doc.setFontSize(11);
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(0, 0, 0);
+
+            // Date - TODAY'S date (when PDF is generated)
+            doc.text(`Date: ${today}`, startX, yPos);
+            yPos += lineSpacing * 2;
+
+            // Greeting
+            doc.setFontSize(12);
+            doc.text('Dear Parent/Guardian,', startX, yPos);
+            yPos += lineSpacing * 2;
+
+            // Main message - uses STUDENT NAME from database
+            doc.setFontSize(11);
+            const message = templateSettings.customMessage || 
+                `This letter is to inform you that ${student.name} has not completed the assigned homework: "${templateSettings.assignmentName}".`;
+
+            const lines = doc.splitTextToSize(message, maxWidth);
+            lines.forEach(line => {
+                doc.text(line, startX, yPos);
+                yPos += lineSpacing;
+            });
+
+            yPos += lineSpacing;
+
+            // Optional: Add due date if you have one in database
+            // If student has a 'dueDate' field, you could add:
+            // doc.text(`Due date: ${student.dueDate}`, startX, yPos);
+            // yPos += lineSpacing * 2;
+
+            // Additional paragraph
+            const additionalText = 'Please ensure your child completes this assignment as soon as possible. Incomplete assignments may affect your child\'s overall understanding of the material.';
+            const additionalLines = doc.splitTextToSize(additionalText, maxWidth);
+            additionalLines.forEach(line => {
+                doc.text(line, startX, yPos);
+                yPos += lineSpacing;
+            });
+
+            yPos += lineSpacing * 2;
+
+            // Contact info
+            doc.text('If you have any questions or concerns, please do not hesitate to contact me.', startX, yPos);
+            yPos += lineSpacing * 2;
+
+            // Closing
+            doc.text('Sincerely,', startX, yPos);
+            yPos += lineSpacing * 2;
+
+            doc.setFont(undefined, 'bold');
+            doc.text(templateSettings.teacherName, startX, yPos);
+
+            // Save PDF with student name from database
+            const fileName = isTest ? 
+                'TEST_Letter.pdf' : 
+                `Homework_Notice_${student.name.replace(/\s+/g, '_')}_${today.replace(/\s+/g, '_')}.pdf`;
+            doc.save(fileName);
+
+            if (!isTest) {
+                alert(`✅ PDF generated for ${student.name}!`);
+            } else {
+                alert('✅ Test PDF generated! Check if text is positioned correctly on your letterhead.');
+            }
+        }
+
+        function testPDF() {
+            generatePDF(null, true);
+        }
+
+        function renderStudents() {
+            const tbody = document.getElementById('studentTableBody');
+            const filter = document.getElementById('statusFilter').value;
+            
+            let filteredStudents = studentsData;
+            if (filter === 'incomplete') {
+                filteredStudents = studentsData.filter(s => !s.completed);
+            } else if (filter === 'complete') {
+                filteredStudents = studentsData.filter(s => s.completed);
+            }
+
+            tbody.innerHTML = filteredStudents.map(student => {
+                const scoreClass = student.score >= 80 ? 'high' : student.score >= 60 ? 'medium' : 'low';
+                const suspiciousActivity = student.tabSwitches + student.copyAttempts;
+                const isSelected = selectedStudents.has(student.id);
+                
+                return `
+                    <tr>
+                        <td><input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleStudent(${student.id})"></td>
+                        <td><strong>${student.name}</strong></td>
+                        <td>
+                            <span class="status-badge ${student.completed ? 'status-complete' : 'status-incomplete'}">
+                                ${student.completed ? '✓ Complete' : '✗ Incomplete'}
+                            </span>
+                        </td>
+                        <td>
+                            ${student.completed ? `<span class="score ${scoreClass}">${student.score}%</span>` : '-'}
+                        </td>
+                        <td>${student.date || '-'}</td>
+                        <td>${student.completed ? formatTime(student.timeSeconds) : '-'}</td>
+                        <td>
+                            ${suspiciousActivity > 0 ? 
+                                `<span style="color: #f56565; font-weight: 600;">⚠️ ${suspiciousActivity} flags</span>` : 
+                                '<span style="color: #48bb78;">✓ Clean</span>'}
+                        </td>
+                        <td class="actions">
+                            ${!student.completed ? 
+                                `<button class="btn btn-danger btn-small" onclick="generatePDF(${student.id})">📄 Generate Notice</button>` :
+                                `<button class="btn btn-secondary btn-small" onclick="viewDetails(${student.id})">👁️ View Details</button>`
+                            }
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateStats() {
+            const total = studentsData.length;
+            const completed = studentsData.filter(s => s.completed).length;
+            const incomplete = total - completed;
+            const avgScore = completed > 0 ? 
+                Math.round(studentsData.filter(s => s.completed).reduce((sum, s) => sum + s.score, 0) / completed) : 0;
+
+            document.getElementById('totalStudents').textContent = total;
+            document.getElementById('completedCount').textContent = completed;
+            document.getElementById('incompleteCount').textContent = incomplete;
+            document.getElementById('avgScore').textContent = avgScore + '%';
+        }
+
+        function filterStudents() {
+            renderStudents();
+        }
+
+        function refreshData() {
+            alert('🔄 Data refreshed! (In production, this fetches from database)');
+            renderStudents();
+            updateStats();
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}m ${secs}s`;
+        }
+
+        function toggleStudent(id) {
+            if (selectedStudents.has(id)) {
+                selectedStudents.delete(id);
+            } else {
+                selectedStudents.add(id);
+            }
+            updateBulkActions();
+            renderStudents();
+        }
+
+        function toggleSelectAll() {
+            const checked = document.getElementById('selectAll').checked;
+            selectedStudents.clear();
+            
+            if (checked) {
+                const filter = document.getElementById('statusFilter').value;
+                let filteredStudents = studentsData;
+                if (filter === 'incomplete') {
+                    filteredStudents = studentsData.filter(s => !s.completed);
+                } else if (filter === 'complete') {
+                    filteredStudents = studentsData.filter(s => s.completed);
+                }
+                filteredStudents.forEach(s => selectedStudents.add(s.id));
+            }
+            
+            updateBulkActions();
+            renderStudents();
+        }
+
+        function updateBulkActions() {
+            const bulkBar = document.getElementById('bulkActionsBar');
+            const count = selectedStudents.size;
+            
+            if (count > 0) {
+                bulkBar.classList.add('show');
+                document.getElementById('selectedCount').textContent = `${count} selected`;
+            } else {
+                bulkBar.classList.remove('show');
+            }
+        }
+
+        function clearSelection() {
+            selectedStudents.clear();
+            document.getElementById('selectAll').checked = false;
+            updateBulkActions();
+            renderStudents();
+        }
+
+        function generateBulkPDFs() {
+            if (selectedStudents.size === 0) {
+                alert('Please select at least one student');
+                return;
+            }
+
+            let count = 0;
+            selectedStudents.forEach(id => {
+                const student = studentsData.find(s => s.id === id);
+                if (student && !student.completed) {
+                    setTimeout(() => generatePDF(id), count * 500);
+                    count++;
+                }
+            });
+
+            alert(`✅ Generating ${count} PDFs... Please wait.`);
+            
+            setTimeout(() => {
+                clearSelection();
+            }, count * 500 + 1000);
+        }
+
+        function viewDetails(studentId) {
+            const student = studentsData.find(s => s.id === studentId);
+            if (!student) return;
+
+            alert(`Student Details:\n\n` +
+                  `Name: ${student.name}\n` +
+                  `Score: ${student.score}%\n` +
+                  `Date: ${student.date}\n` +
+                  `Time: ${formatTime(student.timeSeconds)}\n` +
+                  `Tab Switches: ${student.tabSwitches}\n` +
+                  `Copy Attempts: ${student.copyAttempts}\n\n` +
+                  `(In production, this would show full quiz details)`);
+        }
+    </script>
+</body>
+</html>
