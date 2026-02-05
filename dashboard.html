@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Dashboard - Image-Based Template</title>
+    <title>Teacher Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * {
@@ -33,6 +33,29 @@
 
         .header p {
             opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .teacher-input-box {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .teacher-input-box label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .teacher-input-box input {
+            width: 100%;
+            max-width: 400px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
         }
 
         .controls {
@@ -182,27 +205,6 @@
             background: #fef5e7;
             color: #975a16;
             border-left: 4px solid #f59e0b;
-        }
-
-        .template-upload {
-            border: 3px dashed #667eea;
-            padding: 40px;
-            text-align: center;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-            background: #f7fafc;
-            margin-bottom: 20px;
-        }
-
-        .template-upload:hover {
-            border-color: #5568d3;
-            background: #edf2f7;
-        }
-
-        .template-upload.has-template {
-            border-color: #48bb78;
-            background: #f0fff4;
         }
 
         .template-preview {
@@ -396,44 +398,27 @@
 <body>
     <div class="header">
         <h1>📊 Teacher Dashboard</h1>
-        <p>Image-Based Template System - Upload Your Letterhead</p>
+        <p>Homework Tracking & Parent Notification System</p>
+        
+        <!-- Teacher Name Input -->
+        <div class="teacher-input-box">
+            <label for="headerTeacherName">Your Name (for PDFs):</label>
+            <input type="text" id="headerTeacherName" placeholder="Enter your name (e.g., Mr. Louis Pienaar)" onchange="updateTeacherName()">
+        </div>
     </div>
 
-    <!-- Template Upload Section -->
+    <!-- Template Configuration -->
     <div class="template-config">
-        <h2>📄 Upload Your Letterhead Template</h2>
+        <h2>📄 PDF Template Settings</h2>
         
         <div class="alert alert-info">
-            <strong>How it works:</strong><br>
-            1. Upload your school letterhead (PNG/PDF with header & footer)<br>
-            2. Configure teacher name and assignment (these stay the same for all letters)<br>
-            3. Click "Generate Notice" for any incomplete student<br>
-            4. <strong>Student name and date are pulled automatically from the database!</strong><br>
-            5. PDF downloads with student info overlaid on your letterhead
+            <strong>Letterhead auto-loads from repository!</strong> Configure settings below and generate test PDF.
         </div>
-
-        <div id="templateUpload" class="template-upload" onclick="document.getElementById('templateInput').click()">
-            <p style="font-size: 24px; margin-bottom: 10px;">📤</p>
-            <p style="font-weight: 600; margin-bottom: 5px;">Click to Upload Letterhead Template</p>
-            <p style="font-size: 13px; color: #666;">PNG, JPG, or PDF • Recommended: 8.5" x 11" at 300 DPI</p>
-            <p style="font-size: 12px; color: #999; margin-top: 10px;">Your header and footer will remain untouched!</p>
-        </div>
-        <input type="file" id="templateInput" accept="image/png,image/jpeg,application/pdf" style="display: none;">
 
         <img id="templatePreview" class="template-preview" alt="Template preview">
 
-        <!-- Text Position Configuration -->
-        <div id="positionConfig" style="display: none;">
-            <div class="alert alert-success">
-                ✅ Template loaded! Now configure where the letter content should appear.
-            </div>
-
+        <div id="positionConfig">
             <div class="form-grid">
-                <div class="form-group">
-                    <label>Teacher Name</label>
-                    <input type="text" id="teacherName" value="Ms. Anderson" placeholder="Your name">
-                    <small>Will appear in the signature</small>
-                </div>
                 <div class="form-group">
                     <label>Assignment Name</label>
                     <input type="text" id="assignmentName" value="Sentence Types Quiz" placeholder="Assignment name">
@@ -442,50 +427,37 @@
 
             <div class="form-group" style="margin-top: 15px;">
                 <label>Custom Message (Optional)</label>
-                <textarea id="customMessage" placeholder="Leave blank for default message, or customize here...
-
-Default message will be:
-'This letter is to inform you that [STUDENT NAME] has not completed the assigned homework: [ASSIGNMENT].
-
-Please ensure your child completes this assignment as soon as possible.'"></textarea>
-                <small>Leave blank to use default message</small>
+                <textarea id="customMessage" placeholder="Leave blank for default message"></textarea>
+                <small>Default: "This letter is to inform you that [STUDENT] has not completed [ASSIGNMENT]."</small>
             </div>
 
             <div class="position-helper">
                 <h4>📐 Text Position Settings</h4>
                 <p style="font-size: 12px; color: #666; margin-bottom: 15px;">
-                    Adjust where text appears on your template. PDF coordinates: X (horizontal), Y (vertical from top).<br>
-                    Standard page is 210mm wide × 297mm tall. Adjust these values to fit your letterhead.
+                    Adjust where text appears on letterhead. Standard A4 page: 210mm wide × 297mm tall.
                 </p>
                 
                 <div class="position-grid">
                     <div class="position-input">
                         <label>Start X:</label>
-                        <input type="number" id="contentX" value="20" min="0" max="190">
+                        <input type="number" id="contentX" value="25" min="0" max="190">
                         <small>mm</small>
                     </div>
                     <div class="position-input">
                         <label>Start Y:</label>
-                        <input type="number" id="contentY" value="80" min="0" max="250">
+                        <input type="number" id="contentY" value="75" min="0" max="250">
                         <small>mm</small>
                     </div>
                     <div class="position-input">
                         <label>Max Width:</label>
-                        <input type="number" id="contentWidth" value="170" min="50" max="200">
+                        <input type="number" id="contentWidth" value="160" min="50" max="200">
                         <small>mm</small>
                     </div>
                     <div class="position-input">
                         <label>Line Height:</label>
-                        <input type="number" id="lineHeight" value="7" min="4" max="12">
+                        <input type="number" id="lineHeight" value="6" min="4" max="12">
                         <small>mm</small>
                     </div>
-                </div>
-
-                <div class="alert alert-warning" style="margin-top: 15px;">
-                    <strong>💡 Tips:</strong><br>
-                    • Start Y should be below your header (e.g., 80mm if header is 60mm tall)<br>
-                    • Leave room for footer at bottom (don't go past 250mm Y position)<br>
-                    • Test with one PDF first, then adjust if needed!
                 </div>
             </div>
 
@@ -569,97 +541,106 @@ Please ensure your child completes this assignment as soon as possible.'"></text
     </div>
 
     <script>
-
         // ============ SUPABASE CONFIGURATION ============
-const SUPABASE_URL = 'https://qedepuxzmdchujbipgax.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_JdSxu3gnEDIFaNtB1K4PNg_vqj0WoOI';  // Paste your anon key
+        const SUPABASE_URL = 'https://qedepuxzmdchujbipgax.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_JdSxu3gnEDIFaNtB1K4PNg_vqj0WoOI';
 
-// Fetch data from database
-async function fetchFromDatabase() {
-    try {
-        const response = await fetch(
-            `${SUPABASE_URL}/rest/v1/quiz_attempts?select=*&order=created_at.desc`,
-            {
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_KEY}`
+        async function fetchFromDatabase() {
+            try {
+                const response = await fetch(
+                    `${SUPABASE_URL}/rest/v1/quiz_attempts?select=*&order=created_at.desc`,
+                    {
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`
+                        }
+                    }
+                );
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('✅ Data loaded from database!', data);
+                    return data;
+                } else {
+                    const errorText = await response.text();
+                    console.error('❌ Error loading data:', response.status, errorText);
+                    return [];
                 }
+            } catch (error) {
+                console.error('❌ Network error:', error);
+                return [];
             }
-        );
-        
-        if (response.ok) {
-            const data = await response.json();
-            console.log('✅ Data loaded from database!', data);
-            return data;
-        } else {
-            const errorText = await response.text();
-            console.error('❌ Error loading data:', response.status, errorText);
-            return [];
         }
-    } catch (error) {
-        console.error('❌ Network error:', error);
-        return [];
-    }
-}
-// ============ END SUPABASE CONFIG ============
+        // ============ END SUPABASE CONFIG ============
         
-        // Mock student data
-        let studentsData = [
-            { id: 1, name: "Emma Johnson", completed: true, score: 90, date: "2026-02-04", timeSeconds: 245, tabSwitches: 1, copyAttempts: 0 },
-            { id: 2, name: "Liam Smith", completed: false, score: 0, date: null, timeSeconds: 0, tabSwitches: 0, copyAttempts: 0 },
-            { id: 3, name: "Olivia Brown", completed: true, score: 80, date: "2026-02-03", timeSeconds: 312, tabSwitches: 0, copyAttempts: 0 },
-            { id: 4, name: "Noah Davis", completed: false, score: 0, date: null, timeSeconds: 0, tabSwitches: 0, copyAttempts: 0 },
-            { id: 5, name: "Ava Martinez", completed: true, score: 100, date: "2026-02-05", timeSeconds: 198, tabSwitches: 0, copyAttempts: 0 },
-            { id: 6, name: "Ethan Wilson", completed: false, score: 0, date: null, timeSeconds: 0, tabSwitches: 0, copyAttempts: 0 },
-            { id: 7, name: "Sophia Garcia", completed: true, score: 70, date: "2026-02-02", timeSeconds: 389, tabSwitches: 5, copyAttempts: 3 },
-            { id: 8, name: "Mason Rodriguez", completed: true, score: 85, date: "2026-02-04", timeSeconds: 267, tabSwitches: 2, copyAttempts: 0 },
-            { id: 9, name: "Isabella Lee", completed: false, score: 0, date: null, timeSeconds: 0, tabSwitches: 0, copyAttempts: 0 },
-            { id: 10, name: "Lucas Taylor", completed: true, score: 95, date: "2026-02-05", timeSeconds: 223, tabSwitches: 0, copyAttempts: 0 }
-        ];
-
+        let studentsData = [];
         let selectedStudents = new Set();
         let templateImage = null;
 
         // Template settings
         let templateSettings = {
-            teacherName: "Ms. Anderson",
+            teacherName: "Mr. Louis Pienaar",
             assignmentName: "Sentence Types Quiz",
             customMessage: "",
-            contentX: 20,
-            contentY: 80,
-            contentWidth: 170,
-            lineHeight: 7
+            contentX: 25,
+            contentY: 75,
+            contentWidth: 160,
+            lineHeight: 6
         };
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             loadTemplateSettings();
+            loadSavedTeacherName();
+            loadLetterheadFromRepo();
             renderStudents();
             updateStats();
             document.getElementById('dateFilter').valueAsDate = new Date();
-
-            // Template upload handler
-            document.getElementById('templateInput').addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
-                        templateImage = event.target.result;
-                        document.getElementById('templatePreview').src = templateImage;
-                        document.getElementById('templatePreview').classList.add('show');
-                        document.getElementById('templateUpload').classList.add('has-template');
-                        document.getElementById('positionConfig').style.display = 'block';
-                        
-                        // Save to localStorage
-                        localStorage.setItem('letterheadTemplate', templateImage);
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
         });
 
+        function loadLetterheadFromRepo() {
+            const letterheadPath = 'letterhead.png';
+            
+            fetch(letterheadPath)
+                .then(response => {
+                    if (response.ok) {
+                        return response.blob();
+                    }
+                    throw new Error('Letterhead not found');
+                })
+                .then(blob => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        templateImage = e.target.result;
+                        document.getElementById('templatePreview').src = templateImage;
+                        document.getElementById('templatePreview').classList.add('show');
+                        console.log('✅ Letterhead loaded from repository');
+                    };
+                    reader.readAsDataURL(blob);
+                })
+                .catch(error => {
+                    console.log('ℹ️ No default letterhead found. Upload letterhead.png to repository.');
+                });
+        }
+
+        function updateTeacherName() {
+            const name = document.getElementById('headerTeacherName').value.trim();
+            if (name) {
+                templateSettings.teacherName = name;
+                localStorage.setItem('teacherName', name);
+                console.log('Teacher name updated:', name);
+            }
+        }
+
+        function loadSavedTeacherName() {
+            const savedName = localStorage.getItem('teacherName');
+            if (savedName) {
+                document.getElementById('headerTeacherName').value = savedName;
+                templateSettings.teacherName = savedName;
+            }
+        }
+
         function saveTemplateSettings() {
-            templateSettings.teacherName = document.getElementById('teacherName').value;
             templateSettings.assignmentName = document.getElementById('assignmentName').value;
             templateSettings.customMessage = document.getElementById('customMessage').value;
             templateSettings.contentX = parseInt(document.getElementById('contentX').value);
@@ -676,7 +657,6 @@ async function fetchFromDatabase() {
             const saved = localStorage.getItem('templateSettings');
             if (saved) {
                 templateSettings = JSON.parse(saved);
-                document.getElementById('teacherName').value = templateSettings.teacherName;
                 document.getElementById('assignmentName').value = templateSettings.assignmentName;
                 document.getElementById('customMessage').value = templateSettings.customMessage || '';
                 document.getElementById('contentX').value = templateSettings.contentX;
@@ -684,24 +664,14 @@ async function fetchFromDatabase() {
                 document.getElementById('contentWidth').value = templateSettings.contentWidth;
                 document.getElementById('lineHeight').value = templateSettings.lineHeight;
             }
-            
-            const savedTemplate = localStorage.getItem('letterheadTemplate');
-            if (savedTemplate) {
-                templateImage = savedTemplate;
-                document.getElementById('templatePreview').src = templateImage;
-                document.getElementById('templatePreview').classList.add('show');
-                document.getElementById('templateUpload').classList.add('has-template');
-                document.getElementById('positionConfig').style.display = 'block';
-            }
         }
 
         function generatePDF(studentId, isTest = false) {
             if (!templateImage) {
-                alert('❌ Please upload a letterhead template first!');
+                alert('❌ Letterhead not loaded yet. Please wait or upload letterhead.png to repository.');
                 return;
             }
 
-            // Get student data from database (studentsData array)
             const student = isTest ? 
                 { id: 0, name: "TEST STUDENT", completed: false, date: null } : 
                 studentsData.find(s => s.id === studentId);
@@ -711,28 +681,25 @@ async function fetchFromDatabase() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
-            // Add template as background (full page)
+            // Add template as background
             doc.addImage(templateImage, 'PNG', 0, 0, 210, 297);
 
-            // Use TODAY's date (when letter is generated)
             const today = new Date().toLocaleDateString('en-US', { 
                 year: 'numeric', 
                 month: 'long', 
                 day: 'numeric' 
             });
 
-            // Get settings (teacher name and assignment from settings, student info from database)
             const startX = templateSettings.contentX;
             let yPos = templateSettings.contentY;
             const maxWidth = templateSettings.contentWidth;
             const lineSpacing = templateSettings.lineHeight;
 
-            // Set text styling
             doc.setFontSize(11);
             doc.setFont(undefined, 'normal');
             doc.setTextColor(0, 0, 0);
 
-            // Date - TODAY'S date (when PDF is generated)
+            // Date
             doc.text(`Date: ${today}`, startX, yPos);
             yPos += lineSpacing * 2;
 
@@ -741,7 +708,7 @@ async function fetchFromDatabase() {
             doc.text('Dear Parent/Guardian,', startX, yPos);
             yPos += lineSpacing * 2;
 
-            // Main message - uses STUDENT NAME from database
+            // Main message
             doc.setFontSize(11);
             const message = templateSettings.customMessage || 
                 `This letter is to inform you that ${student.name} has not completed the assigned homework: "${templateSettings.assignmentName}".`;
@@ -753,11 +720,6 @@ async function fetchFromDatabase() {
             });
 
             yPos += lineSpacing;
-
-            // Optional: Add due date if you have one in database
-            // If student has a 'dueDate' field, you could add:
-            // doc.text(`Due date: ${student.dueDate}`, startX, yPos);
-            // yPos += lineSpacing * 2;
 
             // Additional paragraph
             const additionalText = 'Please ensure your child completes this assignment as soon as possible. Incomplete assignments may affect your child\'s overall understanding of the material.';
@@ -780,7 +742,7 @@ async function fetchFromDatabase() {
             doc.setFont(undefined, 'bold');
             doc.text(templateSettings.teacherName, startX, yPos);
 
-            // Save PDF with student name from database
+            // Save PDF
             const fileName = isTest ? 
                 'TEST_Letter.pdf' : 
                 `Homework_Notice_${student.name.replace(/\s+/g, '_')}_${today.replace(/\s+/g, '_')}.pdf`;
@@ -789,7 +751,7 @@ async function fetchFromDatabase() {
             if (!isTest) {
                 alert(`✅ PDF generated for ${student.name}!`);
             } else {
-                alert('✅ Test PDF generated! Check if text is positioned correctly on your letterhead.');
+                alert('✅ Test PDF generated! Check positioning.');
             }
         }
 
@@ -860,38 +822,36 @@ async function fetchFromDatabase() {
             renderStudents();
         }
 
-       async function refreshData() {
-    try {
-        // Fetch from database
-        const data = await fetchFromDatabase();
-        
-        if (data.length === 0) {
-            alert('No data found. Make sure students have taken the quiz!');
-            return;
+        async function refreshData() {
+            try {
+                const data = await fetchFromDatabase();
+                
+                if (data.length === 0) {
+                    alert('No data found. Make sure students have taken the quiz!');
+                    return;
+                }
+                
+                studentsData = data.map(row => ({
+                    id: row.id,
+                    name: row.student_name,
+                    completed: row.completed,
+                    score: row.score,
+                    date: row.date_completed ? 
+                          new Date(row.date_completed).toISOString().split('T')[0] : null,
+                    timeSeconds: row.time_seconds || 0,
+                    tabSwitches: row.tab_switches || 0,
+                    copyAttempts: (row.copy_attempts || 0) + (row.paste_attempts || 0)
+                }));
+                
+                renderStudents();
+                updateStats();
+                
+                alert(`✅ Loaded ${studentsData.length} student(s) from database!`);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                alert('❌ Error fetching data. Check browser console (F12).');
+            }
         }
-        
-        // Transform data to match our format
-        studentsData = data.map(row => ({
-            id: row.id,
-            name: row.student_name,
-            completed: row.completed,
-            score: row.score,
-            date: row.date_completed ? 
-                  new Date(row.date_completed).toISOString().split('T')[0] : null,
-            timeSeconds: row.time_seconds || 0,
-            tabSwitches: row.tab_switches || 0,
-            copyAttempts: (row.copy_attempts || 0) + (row.paste_attempts || 0)
-        }));
-        
-        renderStudents();
-        updateStats();
-        
-        alert(`✅ Loaded ${studentsData.length} student(s) from database!`);
-    } catch (error) {
-        console.error('Error fetching data:', error);
-        alert('❌ Error fetching data. Check browser console (F12).');
-    }
- }
 
         function formatTime(seconds) {
             const mins = Math.floor(seconds / 60);
@@ -979,8 +939,7 @@ async function fetchFromDatabase() {
                   `Date: ${student.date}\n` +
                   `Time: ${formatTime(student.timeSeconds)}\n` +
                   `Tab Switches: ${student.tabSwitches}\n` +
-                  `Copy Attempts: ${student.copyAttempts}\n\n` +
-                  `(In production, this would show full quiz details)`);
+                  `Copy Attempts: ${student.copyAttempts}`);
         }
     </script>
 </body>
