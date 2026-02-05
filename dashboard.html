@@ -569,6 +569,40 @@ Please ensure your child completes this assignment as soon as possible.'"></text
     </div>
 
     <script>
+
+        // ============ SUPABASE CONFIGURATION ============
+const SUPABASE_URL = 'https://qedepuxzmdchujbipgax.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_JdSxu3gnEDIFaNtB1K4PNg_vqj0WoOI';  // Paste your anon key
+
+// Fetch data from database
+async function fetchFromDatabase() {
+    try {
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/quiz_attempts?select=*&order=created_at.desc`,
+            {
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`
+                }
+            }
+        );
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Data loaded from database!', data);
+            return data;
+        } else {
+            const errorText = await response.text();
+            console.error('❌ Error loading data:', response.status, errorText);
+            return [];
+        }
+    } catch (error) {
+        console.error('❌ Network error:', error);
+        return [];
+    }
+}
+// ============ END SUPABASE CONFIG ============
+        
         // Mock student data
         let studentsData = [
             { id: 1, name: "Emma Johnson", completed: true, score: 90, date: "2026-02-04", timeSeconds: 245, tabSwitches: 1, copyAttempts: 0 },
