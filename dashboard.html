@@ -66,7 +66,7 @@
         <h2>📋 Generate Homework Letters</h2>
         
         <div class="alert alert-info">
-            <strong>How it works:</strong> System automatically loads classlist.xls from repository and compares with quiz database. PDFs generated for students who: didn't take quiz, scored &lt;70%, or didn't complete.
+            <strong>How it works:</strong> System automatically loads classlist.xlsx from repository and compares with quiz database. PDFs generated for students who: didn't take quiz, scored &lt;70%, or didn't complete.
         </div>
 
         <div id="systemStatus" class="alert alert-info">
@@ -163,8 +163,8 @@
         }
 
         async function loadClassListFromRepo() {
-            const response = await fetch('classlist.xls');
-            if (!response.ok) throw new Error('Upload classlist.xls to repository');
+            const response = await fetch('classlist.xlsx');
+            if (!response.ok) throw new Error('Upload classlist.xlsx to repository');
             const data = await response.arrayBuffer();
             const workbook = XLSX.read(data, { type: 'array' });
             const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
@@ -180,12 +180,33 @@
 
         function analyzeData() {
             studentsNeedingLetters = classList.map(student => {
-                const quiz = quizData.find(q => q.student_name.toLowerCase().trim() === student.fullName.toLowerCase().trim());
-                let reason = '', needsLetter = false;
-                if (!quiz) { reason = 'Did not take quiz'; needsLetter = true; }
-                else if (!quiz.completed) { reason = 'Did not complete'; needsLetter = true; }
-                else if (quiz.score < 70) { reason = `Scored ${quiz.score}%`; needsLetter = true; }
-                return needsLetter ? { ...student, reason } : null;
+                // Find ALL attempts for this student
+                const attempts = quizData.filter(q => 
+                    q.student_name.toLowerCase().trim() === student.fullName.toLowerCase().trim()
+                );
+
+                // If no attempts at all
+                if (attempts.length === 0) {
+                    return { ...student, reason: 'Did not take quiz' };
+                }
+
+                // Find the best attempt (highest score among completed attempts)
+                const completedAttempts = attempts.filter(a => a.completed);
+                
+                if (completedAttempts.length === 0) {
+                    // Has attempts but none completed
+                    return { ...student, reason: 'Did not complete' };
+                }
+
+                // Get the highest score from completed attempts
+                const bestScore = Math.max(...completedAttempts.map(a => a.score));
+
+                if (bestScore < 70) {
+                    return { ...student, reason: `Best score: ${bestScore}%` };
+                }
+
+                // Student passed - no letter needed
+                return null;
             }).filter(Boolean);
 
             document.getElementById('statsSection').style.display = 'grid';
