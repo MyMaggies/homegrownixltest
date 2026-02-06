@@ -66,7 +66,7 @@
         <h2>📋 Generate Homework Letters</h2>
         
         <div class="alert alert-info">
-            <strong>How it works:</strong> System automatically loads classlist.xlsx from repository and compares with quiz database. PDFs generated for students who: didn't take quiz, scored &lt;70%, or didn't complete.
+            <strong>How it works:</strong> System automatically loads classlist.xls from repository and compares with quiz database. PDFs generated for students who: didn't take quiz, scored &lt;70%, or didn't complete.
         </div>
 
         <div id="systemStatus" class="alert alert-info">
@@ -163,8 +163,8 @@
         }
 
         async function loadClassListFromRepo() {
-            const response = await fetch('classlist.xlsx');
-            if (!response.ok) throw new Error('Upload classlist.xlsx to repository');
+            const response = await fetch('classlist.xls');
+            if (!response.ok) throw new Error('Upload classlist.xls to repository');
             const data = await response.arrayBuffer();
             const workbook = XLSX.read(data, { type: 'array' });
             const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
