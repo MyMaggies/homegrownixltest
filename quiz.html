@@ -247,30 +247,49 @@
         const options = ["Declarative", "Interrogative", "Imperative", "Exclamatory"];
 
         // Load class list
-        async function loadClassListFromRepo() {
+      async function loadClassListFromRepo() {
+    try {
+        console.log("Current URL:", window.location.href);
+        console.log("Attempting fetch methods:");
+        
+        const fetchMethods = [
+            'classlist.xls',
+            './classlist.xls',
+            '../classlist.xls',
+            '/classlist.xls'
+        ];
+
+        for (let method of fetchMethods) {
+            console.log(`Trying: ${method}`);
             try {
-                const response = await fetch('classlist.xls');
+                const response = await fetch(method);
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                if (response.ok) {
+                    console.log(`✅ Successfully fetched via: ${method}`);
+                    const data = await response.arrayBuffer();
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                    
+                    console.log("Loaded rows:", jsonData.length);
+                    
+                    return jsonData.map(row => ({
+                        canteenCode: String(row['Canteen Code'] || '').trim(),
+                        fullName: (row['FULL NAME'] || '').trim(),
+                        homeroom: (row['HOMEROOM'] || '').trim()
+                    })).filter(student => student.canteenCode && student.fullName);
                 }
-                
-                const data = await response.arrayBuffer();
-                const workbook = XLSX.read(data, { type: 'array' });
-                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                
-                return jsonData.map(row => ({
-                    canteenCode: String(row['Canteen Code'] || '').trim(),
-                    fullName: (row['FULL NAME'] || '').trim(),
-                    homeroom: (row['HOMEROOM'] || '').trim()
-                })).filter(student => student.canteenCode && student.fullName);
-            } catch (error) {
-                console.error('CRITICAL ERROR loading class list:', error);
-                alert('Failed to load student data. Error: ' + error.message);
-                return [];
+            } catch (specificError) {
+                console.error(`Error with ${method}:`, specificError);
             }
         }
 
+        throw new Error('No working fetch method found');
+    } catch (error) {
+        console.error('CRITICAL ERROR loading class list:', error);
+        alert('Failed to load student data. Check console for details.');
+        return [];
+    }
+}
         // Validate canteen code
         async function validateCanteenCode() {
             if (!studentData) {
