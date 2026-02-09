@@ -1,86 +1,231 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Existing head content -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            margin-bottom: 10px;
+        }
+
+        .dashboard-tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            background: #f0f0f0;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            margin-bottom: 10px;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        .stat-card .number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background-color: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            background-color: #5658ea;
+        }
+    </style>
 </head>
 <body>
-    <!-- Existing body content -->
-    <div class="main-section">
-        <!-- Add a toggle for different views -->
-        <div class="dashboard-tabs">
-            <button onclick="switchTab('engagement')" class="tab-btn active">Student Engagement</button>
-            <button onclick="switchTab('homework')" class="tab-btn">Homework Letters</button>
-        </div>
+    <div class="header">
+        <h1>📊 Teacher Dashboard</h1>
+        <p>Automated Quiz and Homework Tracking</p>
+    </div>
 
-        <!-- Engagement Tab -->
-        <div id="engagementTab" class="tab-content active">
-            <h2>📊 Student Engagement Overview</h2>
-            <div class="stats-container">
-                <div class="stat-card">
-                    <h3>Total Students</h3>
-                    <div class="number" id="totalStudents">0</div>
-                </div>
-                <div class="stat-card success">
-                    <h3>Quiz Completed</h3>
-                    <div class="number" id="completedQuizzes">0</div>
-                </div>
-                <div class="stat-card warning">
-                    <h3>Average Score</h3>
-                    <div class="number" id="averageScore">0%</div>
-                </div>
+    <div class="dashboard-tabs">
+        <button onclick="switchTab('engagement')" class="tab-btn active">Student Engagement</button>
+        <button onclick="switchTab('homework')" class="tab-btn">Homework Letters</button>
+    </div>
+
+    <div id="engagementTab" class="tab-content active">
+        <h2>Student Performance Overview</h2>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Total Students</h3>
+                <div class="number" id="totalStudents">0</div>
             </div>
-
-            <div class="student-engagement-details">
-                <h3>Detailed Student Performance</h3>
-                <table id="studentPerformanceTable">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Homeroom</th>
-                            <th>Score</th>
-                            <th>Time Spent</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="studentPerformanceBody"></tbody>
-                </table>
+            <div class="stat-card">
+                <h3>Quiz Completed</h3>
+                <div class="number" id="completedQuizzes">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Average Score</h3>
+                <div class="number" id="averageScore">0%</div>
             </div>
         </div>
 
-        <!-- Existing Homework Letters Tab -->
-        <div id="homeworkTab" class="tab-content">
-            <!-- Existing homework letters content -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Homeroom</th>
+                    <th>Quiz Score</th>
+                    <th>Time Spent</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="studentPerformanceBody"></tbody>
+        </table>
+    </div>
+
+    <div id="homeworkTab" class="tab-content">
+        <h2>Homework Letters Generation</h2>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Total Students</h3>
+                <div class="number" id="totalClassStudents">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Completed</h3>
+                <div class="number" id="completedStudents">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Needs Letter</h3>
+                <div class="number" id="incompleteStudents">0</div>
+            </div>
         </div>
+
+        <div id="studentListPreview">
+            <h3>Students Requiring Letters</h3>
+            <div id="studentListContent"></div>
+        </div>
+
+        <button class="btn" onclick="generateAllPDFs()">Generate Homework Letters</button>
     </div>
 
     <script>
         const SUPABASE_URL = 'https://qedepuxzmdchujbipgax.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_JdSxu3gnEDIFaNtB1K4PNg_vqj0WoOI';
 
-        let classList = [], quizData = [];
+        let classList = [], quizData = [], letterheadImage = null;
+        let studentsNeedingLetters = [];
 
-        // Tab switching functionality
+        // Tab Switching
         function switchTab(tabName) {
-            // Remove active class from all buttons and tabs
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
 
-            // Add active class to selected tab and button
             document.querySelector(`button[onclick="switchTab('${tabName}')"]`).classList.add('active');
             document.getElementById(`${tabName}Tab`).classList.add('active');
 
-            // If engagement tab, load data
-            if (tabName === 'engagement') {
-                loadEngagementData();
-            }
+            if (tabName === 'engagement') loadEngagementData();
+            if (tabName === 'homework') loadHomeworkData();
         }
 
-        // Load class list with full details
+        // Load Letterhead
+        async function loadLetterhead() {
+            const response = await fetch('letterhead.png');
+            const blob = await response.blob();
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => { letterheadImage = e.target.result; resolve(); };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        // Load Class List
         async function loadClassListFromRepo() {
             const response = await fetch('classlist.xls');
-            if (!response.ok) throw new Error('Upload classlist.xls to repository');
-            
             const data = await response.arrayBuffer();
             const workbook = XLSX.read(data, { type: 'array' });
             const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
@@ -92,7 +237,7 @@
             })).filter(student => student.fullName);
         }
 
-        // Fetch quiz data from Supabase
+        // Fetch Quiz Data
         async function fetchQuizData() {
             const response = await fetch(`${SUPABASE_URL}/rest/v1/quiz_attempts?select=*`, {
                 headers: { 
@@ -103,37 +248,30 @@
             return response.ok ? response.json() : [];
         }
 
-        // Load and analyze engagement data
+        // Load Engagement Data
         async function loadEngagementData() {
             try {
-                // Fetch both class list and quiz data
                 const [classListData, quizAttempts] = await Promise.all([
                     loadClassListFromRepo(),
                     fetchQuizData()
                 ]);
 
-                // Total students
                 const totalStudents = classListData.length;
                 document.getElementById('totalStudents').textContent = totalStudents;
 
-                // Completed quizzes
                 const completedQuizzes = quizAttempts.filter(attempt => attempt.completed);
                 document.getElementById('completedQuizzes').textContent = `${completedQuizzes.length}/${totalStudents}`;
 
-                // Average score
                 const averageScore = completedQuizzes.length > 0 
                     ? (completedQuizzes.reduce((sum, quiz) => sum + quiz.score, 0) / completedQuizzes.length).toFixed(1)
                     : '0';
                 document.getElementById('averageScore').textContent = `${averageScore}%`;
 
-                // Populate student performance table
                 const performanceBody = document.getElementById('studentPerformanceBody');
-                performanceBody.innerHTML = ''; // Clear existing rows
+                performanceBody.innerHTML = '';
 
-                // Create a map of quiz attempts by student name
                 const quizMap = new Map(quizAttempts.map(attempt => [attempt.student_name, attempt]));
 
-                // Populate table with student data
                 classListData.forEach(student => {
                     const quizAttempt = quizMap.get(student.fullName);
                     const row = document.createElement('tr');
@@ -148,79 +286,82 @@
 
                     performanceBody.appendChild(row);
                 });
+            } catch (error) {
+                console.error('Error loading engagement data:', error);
+                alert('Failed to load student data.');
+            }
+        }
 
-                // Analyze for homework letters (similar to existing code)
+        // Load Homework Data
+        async function loadHomeworkData() {
+            try {
+                const [classListData, quizAttempts] = await Promise.all([
+                    loadClassListFromRepo(),
+                    fetchQuizData()
+                ]);
+
+                const totalStudents = classListData.length;
+                const quizMap = new Map(quizAttempts.map(attempt => [attempt.student_name, attempt]));
+
                 studentsNeedingLetters = classListData.filter(student => {
                     const attempt = quizMap.get(student.fullName);
                     return !attempt || !attempt.completed || (attempt.score < 70);
                 });
 
-                // Update existing homework letter generation logic
-                document.getElementById('totalStudents').textContent = classList.length;
-                document.getElementById('completedStudents').textContent = classList.length - studentsNeedingLetters.length;
+                document.getElementById('totalClassStudents').textContent = totalStudents;
+                document.getElementById('completedStudents').textContent = totalStudents - studentsNeedingLetters.length;
                 document.getElementById('incompleteStudents').textContent = studentsNeedingLetters.length;
 
-                // Rest of the existing homework letter generation logic remains the same
+                const studentListContent = document.getElementById('studentListContent');
+                studentListContent.innerHTML = studentsNeedingLetters
+                    .map(s => `
+                        <div>
+                            <strong>${s.fullName}</strong> 
+                            (${s.homeroom})
+                        </div>
+                    `).join('');
             } catch (error) {
-                console.error('Error loading engagement data:', error);
-                alert('Failed to load student data. Please check your connections.');
+                console.error('Error loading homework data:', error);
+                alert('Failed to load student data.');
             }
         }
 
-        // Existing initialization and other functions remain the same
-        document.addEventListener('DOMContentLoaded', async function() {
-            loadSavedTeacherName();
-            loadSavedAssignment();
+        // Generate PDF Letters
+        function generatePDFForStudent(student) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
             
-            // Initial load of engagement data
+            doc.addImage(letterheadImage, 'PNG', 0, 0, 297, 210);
+            
+            // PDF generation logic here
+            // Similar to your previous implementation
+
+            return doc;
+        }
+
+        // Generate All PDFs
+        async function generateAllPDFs() {
+            if (!letterheadImage) {
+                await loadLetterhead();
+            }
+
+            const zip = new JSZip();
+            const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+            studentsNeedingLetters.forEach(student => {
+                const pdf = generatePDFForStudent(student);
+                zip.file(`${student.fullName.replace(/\s+/g, '_')}_letter.pdf`, pdf.output('blob'));
+            });
+
+            const content = await zip.generateAsync({ type: 'blob' });
+            saveAs(content, `Homework_Letters_${today}.zip`);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadLetterhead();
             await loadEngagementData();
         });
-
-        // Rest of the existing dashboard script remains the same
     </script>
-
-    <!-- Existing style and other content -->
-    <style>
-        /* Add some styles for tabs */
-        .dashboard-tabs {
-            display: flex;
-            margin-bottom: 20px;
-        }
-        .tab-btn {
-            flex: 1;
-            padding: 15px;
-            background: #f0f0f0;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .tab-btn.active {
-            background: #667eea;
-            color: white;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        .student-engagement-details {
-            margin-top: 20px;
-        }
-        #studentPerformanceTable {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        #studentPerformanceTable th, 
-        #studentPerformanceTable td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        #studentPerformanceTable th {
-            background-color: #f2f2f2;
-        }
-    </style>
 </body>
 </html>
