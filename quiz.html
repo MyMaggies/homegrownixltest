@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sentence Functions Quiz</title>
+    <title>Sentence Types Quiz</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         * {
@@ -206,245 +206,277 @@
         </div>
     </div>
 
-   <script>
-    // Supabase Configuration
-    const SUPABASE_URL = 'https://qedepuxzmdchujbipgax.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_JdSxu3gnEDIFaNtB1K4PNg_vqj0WoOI';
+    <script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://qedepuxzmdchujbipgax.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_JdSxu3gnEDIFaNtB1K4PNg_vqj0WoOI';
 
-    let studentData = null;
+        // Global variables
+        let studentData = null;
+        let currentQuestion = 0;
+        let score = 0;
+        let selectedAnswer = null;
+        let startTime;
+        let quizActive = false;
+        let quizQuestions = [];
 
-    // Load class list
-    async function loadClassListFromRepo() {
-        try {
-            const response = await fetch('../classlist.xls');
-            const data = await response.arrayBuffer();
-            const workbook = XLSX.read(data, { type: 'array' });
-            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+        // Question bank
+        const questions = [
+            { sentence: "What time does the movie start?", correct: "Interrogative" },
+            { sentence: "The sun rises in the east.", correct: "Declarative" },
+            { sentence: "Close the door behind you.", correct: "Imperative" },
+            { sentence: "That was an amazing performance!", correct: "Exclamatory" },
+            { sentence: "Where did you put my keys?", correct: "Interrogative" },
+            { sentence: "Please turn off the lights.", correct: "Imperative" },
+            { sentence: "She completed her homework on time.", correct: "Declarative" },
+            { sentence: "I can't believe we won the game!", correct: "Exclamatory" },
+            { sentence: "How do you solve this math problem?", correct: "Interrogative" },
+            { sentence: "Stop talking during the test.", correct: "Imperative" },
+            { sentence: "The cat is sleeping on the couch.", correct: "Declarative" },
+            { sentence: "Watch out for that car!", correct: "Exclamatory" },
+            { sentence: "When is your birthday?", correct: "Interrogative" },
+            { sentence: "Help me carry these boxes.", correct: "Imperative" },
+            { sentence: "What a beautiful sunset!", correct: "Exclamatory" },
+            { sentence: "Dogs are loyal animals.", correct: "Declarative" },
+            { sentence: "Did you finish your project?", correct: "Interrogative" },
+            { sentence: "Be quiet in the library.", correct: "Imperative" },
+            { sentence: "This is the best day ever!", correct: "Exclamatory" },
+            { sentence: "The Earth orbits around the Sun.", correct: "Declarative" }
+        ];
+
+        const options = ["Declarative", "Interrogative", "Imperative", "Exclamatory"];
+
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM Fully Loaded");
+
+            // Get references to key elements
+            const canteenCodeInput = document.getElementById('canteenCode');
+            const studentNameConfirmation = document.getElementById('studentNameConfirmation');
+            const proceedToQuizBtn = document.getElementById('proceedToQuizBtn');
+
+            // Canteen Code Input Event Listener
+            if (canteenCodeInput) {
+                canteenCodeInput.addEventListener('input', function() {
+                    console.log("Input Event Triggered:", this.value);
+                    
+                    // Reset confirmation
+                    studentNameConfirmation.style.display = 'none';
+                    proceedToQuizBtn.style.display = 'none';
+                    
+                    // If input is 6 digits, attempt validation
+                    if (this.value.trim().length === 6 && /^[0-9]{6}$/.test(this.value)) {
+                        validateCanteenCode();
+                    }
+                });
+            }
+
+            // Proceed to Quiz Button Event Listener
+            if (proceedToQuizBtn) {
+                proceedToQuizBtn.addEventListener('click', function() {
+                    document.getElementById('canteenCodeSection').classList.add('hidden');
+                    document.getElementById('quizSection').classList.remove('hidden');
+                    
+                    // Shuffle and select 10 random questions
+                    quizQuestions = [...questions].sort(() => Math.random() - 0.5).slice(0, 10);
+                    
+                    // Start quiz
+                    startTime = new Date();
+                    quizActive = true;
+                    currentQuestion = 0;
+                    score = 0;
+                    loadQuestion();
+                });
+            }
+        });
+
+        // Load class list
+        async function loadClassListFromRepo() {
+            try {
+                console.log("Attempting to fetch class list");
+                const response = await fetch('../classlist.xls');
+                
+                if (!response.ok) {
+                    console.error('Fetch failed:', response.status, response.statusText);
+                    throw new Error('Failed to load classlist.xls');
+                }
+                
+                const data = await response.arrayBuffer();
+                console.log("ArrayBuffer received:", data.byteLength);
+                
+                const workbook = XLSX.read(data, { type: 'array' });
+                console.log("Workbook sheets:", workbook.SheetNames);
+                
+                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                console.log("JSON Data rows:", jsonData.length);
+                
+                const processedData = jsonData.map(row => ({
+                    canteenCode: String(row['Canteen Code'] || '').trim(),
+                    fullName: (row['FULL NAME'] || '').trim(),
+                    homeroom: (row['HOMEROOM'] || '').trim()
+                })).filter(student => student.canteenCode && student.fullName);
+
+                console.log("Processed Students:", processedData);
+                
+                return processedData;
+            } catch (error) {
+                console.error('CRITICAL ERROR loading class list:', error);
+                alert('Failed to load student data. Error: ' + error.message);
+                return [];
+            }
+        }
+
+        // Validate canteen code
+        async function validateCanteenCode() {
+            // First time loading data
+            if (!studentData) {
+                studentData = await loadClassListFromRepo();
+            }
+
+            const canteenCodeInput = document.getElementById('canteenCode');
+            const canteenCode = canteenCodeInput.value.trim();
             
-            return jsonData.map(row => ({
-                canteenCode: String(row['Canteen Code'] || '').trim(),
-                fullName: (row['FULL NAME'] || '').trim(),
-                homeroom: (row['HOMEROOM'] || '').trim()
-            })).filter(student => student.canteenCode && student.fullName);
-        } catch (error) {
-            console.error('Error loading class list:', error);
-            alert('Failed to load student data. Please contact your teacher.');
-            return [];
-        }
-    }
+            // Validate format
+            if (!/^[0-9]{6}$/.test(canteenCode)) {
+                alert('Please enter a valid 6-digit Canteen Code');
+                return false;
+            }
 
-    // Validate canteen code and confirm student details
-    async function validateCanteenCode() {
-        // First time loading data
-        if (!studentData) {
-            studentData = await loadClassListFromRepo();
-        }
-
-        const canteenCodeInput = document.getElementById('canteenCode');
-        const canteenCode = canteenCodeInput.value.trim();
-        
-        // Validate format
-        if (!/^[0-9]{6}$/.test(canteenCode)) {
-            alert('Please enter a valid 6-digit Canteen Code');
+            // Find student by canteen code
+            const matchedStudent = studentData.find(student => 
+                student.canteenCode === canteenCode
+            );
+            
+            if (matchedStudent) {
+                document.getElementById('confirmedStudentName').textContent = matchedStudent.fullName;
+                document.getElementById('confirmedHomeroom').textContent = matchedStudent.homeroom;
+                document.getElementById('studentNameConfirmation').style.display = 'block';
+                document.getElementById('proceedToQuizBtn').style.display = 'block';
+                
+                // Store student details
+                localStorage.setItem('studentFullName', matchedStudent.fullName);
+                localStorage.setItem('studentHomeroom', matchedStudent.homeroom);
+                localStorage.setItem('studentCanteenCode', canteenCode);
+                
+                return true;
+            }
+            
+            alert('Canteen Code not found. Please check and try again.');
             return false;
         }
 
-        // Find student by canteen code
-        const matchedStudent = studentData.find(student => 
-            student.canteenCode === canteenCode
-        );
-        
-        if (matchedStudent) {
-            // Show confirmation section
-            document.getElementById('confirmedStudentName').textContent = matchedStudent.fullName;
-            document.getElementById('confirmedHomeroom').textContent = matchedStudent.homeroom;
-            document.getElementById('studentNameConfirmation').style.display = 'block';
-            document.getElementById('proceedToQuizBtn').style.display = 'block';
-            
-            // Store student details for later use
-            localStorage.setItem('studentFullName', matchedStudent.fullName);
-            localStorage.setItem('studentHomeroom', matchedStudent.homeroom);
-            localStorage.setItem('studentCanteenCode', canteenCode);
-            
-            return true;
-        }
-        
-        alert('Canteen Code not found. Please check and try again.');
-        return false;
-    }
-
-    // Event listener for canteen code input
-    document.getElementById('canteenCode').addEventListener('input', function() {
-        // Reset confirmation and start button
-        document.getElementById('studentNameConfirmation').style.display = 'none';
-        document.getElementById('proceedToQuizBtn').style.display = 'none';
-        
-        // If input is 6 digits, attempt validation
-        if (this.value.trim().length === 6 && /^[0-9]{6}$/.test(this.value)) {
-            validateCanteenCode();
-        }
-    });
-
-    // Event listener for proceed to quiz button
-    document.getElementById('proceedToQuizBtn').addEventListener('click', function() {
-        document.getElementById('canteenCodeSection').classList.add('hidden');
-        document.getElementById('quizSection').classList.remove('hidden');
-        
-        // Shuffle and select 10 random questions
-        quizQuestions = [...questions].sort(() => Math.random() - 0.5).slice(0, 10);
-        
-        // Start quiz
-        startTime = new Date();
-        quizActive = true;
-        currentQuestion = 0;
-        score = 0;
-        loadQuestion();
-    });
-
-    // Existing quiz variables and functions remain the same
-    let currentQuestion = 0;
-    let score = 0;
-    let selectedAnswer = null;
-    let startTime;
-    let quizActive = false;
-    let quizQuestions = [];
-
-    // Question bank
-    const questions = [
-        { sentence: "What time does the movie start?", correct: "Interrogative" },
-        { sentence: "The sun rises in the east.", correct: "Declarative" },
-        { sentence: "Close the door behind you.", correct: "Imperative" },
-        { sentence: "That was an amazing performance!", correct: "Exclamatory" },
-        { sentence: "Where did you put my keys?", correct: "Interrogative" },
-        { sentence: "Please turn off the lights.", correct: "Imperative" },
-        { sentence: "She completed her homework on time.", correct: "Declarative" },
-        { sentence: "I can't believe we won the game!", correct: "Exclamatory" },
-        { sentence: "How do you solve this math problem?", correct: "Interrogative" },
-        { sentence: "Stop talking during the test.", correct: "Imperative" },
-        { sentence: "The cat is sleeping on the couch.", correct: "Declarative" },
-        { sentence: "Watch out for that car!", correct: "Exclamatory" },
-        { sentence: "When is your birthday?", correct: "Interrogative" },
-        { sentence: "Help me carry these boxes.", correct: "Imperative" },
-        { sentence: "What a beautiful sunset!", correct: "Exclamatory" },
-        { sentence: "Dogs are loyal animals.", correct: "Declarative" },
-        { sentence: "Did you finish your project?", correct: "Interrogative" },
-        { sentence: "Be quiet in the library.", correct: "Imperative" },
-        { sentence: "This is the best day ever!", correct: "Exclamatory" },
-        { sentence: "The Earth orbits around the Sun.", correct: "Declarative" }
-    ];
-
-    const options = ["Declarative", "Interrogative", "Imperative", "Exclamatory"];
-
-    // Existing quiz functions (loadQuestion, selectOption, submitAnswer, etc.)
-    function loadQuestion() {
-        if (currentQuestion >= quizQuestions.length) {
-            showResults();
-            return;
-        }
-
-        selectedAnswer = null;
-        
-        document.getElementById('questionNumber').textContent = `Question ${currentQuestion + 1}/${quizQuestions.length}`;
-        document.getElementById('sentence').textContent = `"${quizQuestions[currentQuestion].sentence}"`;
-        
-        const optionsDiv = document.getElementById('options');
-        optionsDiv.innerHTML = '';
-        
-        // Shuffle options for each question
-        const shuffledOptions = [...options].sort(() => Math.random() - 0.5);
-        
-        shuffledOptions.forEach(option => {
-            const optionDiv = document.createElement('div');
-            optionDiv.className = 'option';
-            optionDiv.textContent = option;
-            optionDiv.onclick = () => selectOption(option, optionDiv);
-            optionsDiv.appendChild(optionDiv);
-        });
-
-        document.getElementById('submitBtn').disabled = true;
-    }
-
-    function selectOption(answer, element) {
-        // Remove previous selection
-        document.querySelectorAll('.option').forEach(opt => {
-            opt.classList.remove('selected');
-        });
-        
-        element.classList.add('selected');
-        selectedAnswer = answer;
-        document.getElementById('submitBtn').disabled = false;
-    }
-
-    function submitAnswer() {
-        if (!selectedAnswer) return;
-
-        const correct = selectedAnswer === quizQuestions[currentQuestion].correct;
-        if (correct) score++;
-
-        // Visual feedback
-        document.querySelectorAll('.option').forEach(opt => {
-            if (opt.textContent === quizQuestions[currentQuestion].correct) {
-                opt.classList.add('correct');
-            } else if (opt.textContent === selectedAnswer && !correct) {
-                opt.classList.add('incorrect');
+        // Load question
+        function loadQuestion() {
+            if (currentQuestion >= quizQuestions.length) {
+                showResults();
+                return;
             }
-            opt.style.pointerEvents = 'none';
-        });
 
-        document.getElementById('submitBtn').disabled = true;
+            selectedAnswer = null;
+            
+            document.getElementById('questionNumber').textContent = `Question ${currentQuestion + 1}/${quizQuestions.length}`;
+            document.getElementById('sentence').textContent = `"${quizQuestions[currentQuestion].sentence}"`;
+            
+            const optionsDiv = document.getElementById('options');
+            optionsDiv.innerHTML = '';
+            
+            // Shuffle options for each question
+            const shuffledOptions = [...options].sort(() => Math.random() - 0.5);
+            
+            shuffledOptions.forEach(option => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option';
+                optionDiv.textContent = option;
+                optionDiv.onclick = () => selectOption(option, optionDiv);
+                optionsDiv.appendChild(optionDiv);
+            });
 
-        setTimeout(() => {
-            currentQuestion++;
-            loadQuestion();
-        }, 1500);
-    }
+            document.getElementById('submitBtn').disabled = true;
+        }
 
-    function showResults() {
-        document.getElementById('quizSection').classList.add('hidden');
-        document.getElementById('results').classList.remove('hidden');
-        
-        const percentage = Math.round((score / quizQuestions.length) * 100);
-        document.getElementById('scoreDisplay').textContent = `${score}/${quizQuestions.length} (${percentage}%)`;
-        
-        // Save to database
-        const quizData = {
-            student_name: localStorage.getItem('studentFullName'),
-            homeroom: localStorage.getItem('studentHomeroom'),
-            canteen_code: localStorage.getItem('studentCanteenCode'),
-            assignment_name: 'Sentence Types Quiz',
-            completed: true,
-            score: percentage,
-            total_questions: quizQuestions.length,
-            date_completed: new Date().toISOString()
-        };
-
-        saveToDatabase(quizData);
-    }
-
-    // Save quiz data to Supabase
-    async function saveToDatabase(data) {
-        try {
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/quiz_attempts`, {
-                method: 'POST',
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_KEY}`,
-                    'Content-Type': 'application/json',
-                    'Prefer': 'return=representation'
-                },
-                body: JSON.stringify(data)
+        // Select answer option
+        function selectOption(answer, element) {
+            // Remove previous selection
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
             });
             
-            if (response.ok) {
-                console.log('✅ Quiz saved to database!');
-            } else {
-                console.error('❌ Error saving to database:', await response.text());
-            }
-        } catch (error) {
-            console.error('❌ Network error:', error);
+            element.classList.add('selected');
+            selectedAnswer = answer;
+            document.getElementById('submitBtn').disabled = false;
         }
-    }
-</script>
-    
+
+        // Submit answer
+        function submitAnswer() {
+            if (!selectedAnswer) return;
+
+            const correct = selectedAnswer === quizQuestions[currentQuestion].correct;
+            if (correct) score++;
+
+            // Visual feedback
+            document.querySelectorAll('.option').forEach(opt => {
+                if (opt.textContent === quizQuestions[currentQuestion].correct) {
+                    opt.classList.add('correct');
+                } else if (opt.textContent === selectedAnswer && !correct) {
+                    opt.classList.add('incorrect');
+                }
+                opt.style.pointerEvents = 'none';
+            });
+
+            document.getElementById('submitBtn').disabled = true;
+
+            setTimeout(() => {
+                currentQuestion++;
+                loadQuestion();
+            }, 1500);
+        }
+
+        // Show final results
+        function showResults() {
+            document.getElementById('quizSection').classList.add('hidden');
+            document.getElementById('results').classList.remove('hidden');
+            
+            const percentage = Math.round((score / quizQuestions.length) * 100);
+            document.getElementById('scoreDisplay').textContent = `${score}/${quizQuestions.length} (${percentage}%)`;
+            
+            // Save to database
+            const quizData = {
+                student_name: localStorage.getItem('studentFullName'),
+                homeroom: localStorage.getItem('studentHomeroom'),
+                canteen_code: localStorage.getItem('studentCanteenCode'),
+                assignment_name: 'Sentence Types Quiz',
+                completed: true,
+                score: percentage,
+                total_questions: quizQuestions.length,
+                date_completed: new Date().toISOString()
+            };
+
+            saveToDatabase(quizData);
+        }
+
+        // Save quiz data to Supabase
+        async function saveToDatabase(data) {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/quiz_attempts`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    console.log('✅ Quiz saved to database!');
+                } else {
+                    console.error('❌ Error saving to database:', await response.text());
+                }
+            } catch (error) {
+                console.error('❌ Network error:', error);
+            }
+        }
+    </script>
 </body>
 </html>
