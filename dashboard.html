@@ -66,6 +66,19 @@
             display: block;
         }
 
+        .filter-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .filter-section input,
+        .filter-section select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -108,6 +121,26 @@
             font-weight: bold;
         }
 
+        .teacher-input-box {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .teacher-input-box label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .teacher-input-box input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
         .btn {
             padding: 10px 20px;
             background-color: #667eea;
@@ -137,6 +170,23 @@
     <div id="engagementTab" class="tab-content active">
         <h2>Student Performance Overview</h2>
         
+        <div class="filter-section">
+            <input 
+                type="text" 
+                id="nameFilter" 
+                placeholder="Filter by Name" 
+                oninput="filterStudents()"
+            >
+            <select id="hostroomFilter" onchange="filterStudents()">
+                <option value="">All Homerooms</option>
+            </select>
+            <select id="statusFilter" onchange="filterStudents()">
+                <option value="">All Statuses</option>
+                <option value="completed">Completed</option>
+                <option value="incomplete">Incomplete</option>
+            </select>
+        </div>
+
         <div class="stats">
             <div class="stat-card">
                 <h3>Total Students</h3>
@@ -169,6 +219,16 @@
     <div id="homeworkTab" class="tab-content">
         <h2>Homework Letters Generation</h2>
         
+        <div class="teacher-input-box">
+            <label for="teacherName">Your Name (for PDF signatures):</label>
+            <input 
+                type="text" 
+                id="teacherName" 
+                placeholder="e.g., Mr. Louis Pienaar" 
+                onchange="updateTeacherName()"
+            >
+        </div>
+
         <div class="stats">
             <div class="stat-card">
                 <h3>Total Students</h3>
@@ -184,11 +244,6 @@
             </div>
         </div>
 
-        <div id="studentListPreview">
-            <h3>Students Requiring Letters</h3>
-            <div id="studentListContent"></div>
-        </div>
-
         <button class="btn" onclick="generateAllPDFs()">Generate Homework Letters</button>
     </div>
 
@@ -198,6 +253,48 @@
 
         let classList = [], quizData = [], letterheadImage = null;
         let studentsNeedingLetters = [];
+
+        // Update Teacher Name
+        function updateTeacherName() {
+            const teacherName = document.getElementById('teacherName').value.trim();
+            localStorage.setItem('teacherName', teacherName);
+        }
+
+        // Populate Homeroom Filter
+        function populateHomeroomFilter(classListData) {
+            const homeroomFilter = document.getElementById('hostroomFilter');
+            homeroomFilter.innerHTML = '<option value="">All Homerooms</option>';
+            
+            const uniqueHomerooms = [...new Set(classListData.map(student => student.homeroom))];
+            
+            uniqueHomerooms.forEach(homeroom => {
+                const option = document.createElement('option');
+                option.value = homeroom;
+                option.textContent = homeroom;
+                homeroomFilter.appendChild(option);
+            });
+        }
+
+        // Filter Students
+        function filterStudents() {
+            const nameFilter = document.getElementById('nameFilter').value.toLowerCase();
+            const hostroomFilter = document.getElementById('hostroomFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const performanceBody = document.getElementById('studentPerformanceBody');
+            const rows = performanceBody.getElementsByTagName('tr');
+
+            for (let row of rows) {
+                const name = row.cells[0].textContent.toLowerCase();
+                const homeroom = row.cells[1].textContent;
+                const status = row.cells[4].textContent.includes('✅') ? 'completed' : 'incomplete';
+
+                const nameMatch = name.includes(nameFilter);
+                const homeroomMatch = hostroomFilter === '' || homeroom === hostroomFilter;
+                const statusMatch = statusFilter === '' || status === statusFilter;
+
+                row.style.display = (nameMatch && homeroomMatch && statusMatch) ? '' : 'none';
+            }
+        }
 
         // Tab Switching
         function switchTab(tabName) {
@@ -256,6 +353,9 @@
                     fetchQuizData()
                 ]);
 
+                // Populate homeroom filter
+                populateHomeroomFilter(classListData);
+
                 const totalStudents = classListData.length;
                 document.getElementById('totalStudents').textContent = totalStudents;
 
@@ -311,15 +411,6 @@
                 document.getElementById('totalClassStudents').textContent = totalStudents;
                 document.getElementById('completedStudents').textContent = totalStudents - studentsNeedingLetters.length;
                 document.getElementById('incompleteStudents').textContent = studentsNeedingLetters.length;
-
-                const studentListContent = document.getElementById('studentListContent');
-                studentListContent.innerHTML = studentsNeedingLetters
-                    .map(s => `
-                        <div>
-                            <strong>${s.fullName}</strong> 
-                            (${s.homeroom})
-                        </div>
-                    `).join('');
             } catch (error) {
                 console.error('Error loading homework data:', error);
                 alert('Failed to load student data.');
@@ -328,13 +419,34 @@
 
         // Generate PDF Letters
         function generatePDFForStudent(student) {
+            const teacherName = localStorage.getItem('teacherName') || 'Teacher';
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
             
             doc.addImage(letterheadImage, 'PNG', 0, 0, 297, 210);
             
-            // PDF generation logic here
-            // Similar to your previous implementation
+            let yPos = 50;
+            doc.setFontSize(11);
+            doc.text(`Date: ${new Date().toLocaleDateString()}`, 25, yPos);
+            yPos += 10;
+
+            doc.setFontSize(13);
+            doc.text('Incomplete Homework', 25, yPos);
+            yPos += 10;
+
+            doc.setFontSize(11);
+            doc.text(`Dear Parent of ${student.fullName}`, 25, yPos);
+            yPos += 10;
+
+            doc.text('Your son has not completed the recent quiz satisfactorily.', 25, yPos);
+            yPos += 10;
+
+            doc.setFontSize(11);
+            doc.text('Sincerely,', 25, yPos);
+            yPos += 10;
+
+            doc.setFontSize(12);
+            doc.text(teacherName, 25, yPos);
 
             return doc;
         }
@@ -359,6 +471,12 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
+            // Load saved teacher name
+            const savedTeacherName = localStorage.getItem('teacherName');
+            if (savedTeacherName) {
+                document.getElementById('teacherName').value = savedTeacherName;
+            }
+
             await loadLetterhead();
             await loadEngagementData();
         });
