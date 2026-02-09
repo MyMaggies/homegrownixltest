@@ -596,6 +596,34 @@ document.addEventListener('visibilitychange', function() {
             alert('Quiz automatically submitted due to switching tabs.');
             showResults();
         }
+
+        function playTabSwitchBeep() {
+    try {
+        // Check if audio context exists, if not, create one
+        if (!window.audioContext) {
+            window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        const audioContext = window.audioContext;
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.type = 'sine';
+        oscillator.frequency.value = 800;  // High pitch
+
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.01);
+        gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.1);
+
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (error) {
+        console.error('Error playing beep sound:', error);
+    }
+}
     </script>
 </body>
 </html>
