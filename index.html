@@ -3,197 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sentence Functions Revision</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <title>Sentence Types Revision</title>
     <style>
-        /* Paste the entire original CSS from the previous index.html here */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             padding: 20px;
         }
 
         .container {
             max-width: 800px;
-            margin: 0 auto;
             background: white;
             border-radius: 15px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             padding: 40px;
+            text-align: center;
         }
 
         h1 {
             color: #333;
-            text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
         }
 
-        .student-info {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 30px;
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+            margin-bottom: 20px;
         }
 
-        .student-info input {
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            padding: 10px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-            user-select: text;
-            -webkit-user-select: text;
+            height: 100%;
+            border: none;
         }
 
-        .instructions {
-            background: #e7f3ff;
-            border: 2px solid #2196F3;
-            border-radius: 8px;
-            padding: 15px;
+        .content {
+            text-align: left;
             margin-bottom: 20px;
-        }
-
-        .instructions h3 {
-            color: #1976D2;
-            margin-bottom: 10px;
-        }
-
-        .instructions ul {
-            margin-left: 20px;
-            color: #1976D2;
-        }
-
-        .warning-banner {
-            background: #fee;
-            border: 3px solid #dc3545;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .warning-banner h3 {
-            color: #dc3545;
-            margin-bottom: 10px;
-        }
-
-        .warning-banner ul {
-            color: #dc3545;
-            font-weight: 600;
-            line-height: 1.8;
         }
 
         .btn {
-            width: 100%;
-            padding: 15px;
+            display: inline-block;
             background: #667eea;
             color: white;
-            border: none;
+            padding: 15px 30px;
+            text-decoration: none;
             border-radius: 8px;
-            font-size: 18px;
             font-weight: bold;
-            cursor: pointer;
             transition: background 0.3s;
-            margin-top: 20px;
         }
 
         .btn:hover {
             background: #5568d3;
         }
-
-        .btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        #studentNameConfirmation {
-            background: #f0f0f0;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        #studentNameConfirmation h3 {
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        #studentNameConfirmation p {
-            margin: 5px 0;
-        }
-
-        /* Rest of the original CSS */
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📝 Sentence Types Quiz</h1>
-        
-        <div id="loginSection">
-            <div class="student-info">
-                <label for="canteenCode" style="display: block; margin-bottom: 8px; font-weight: bold;">Canteen Code:</label>
-                <input 
-                    type="text" 
-                    id="canteenCode" 
-                    placeholder="Enter your 6-digit Canteen Code" 
-                    pattern="[0-9]{6}" 
-                    maxlength="6" 
-                    required 
-                    style="user-select: text;"
-                >
-                <small style="color: #666; display: block; margin-top: 5px;">
-                    Your 6-digit Canteen Code can be found on your school ID
-                </small>
-            </div>
-            
-            <div id="studentNameConfirmation" style="display: none;">
-                <h3>Confirm Your Details</h3>
-                <p>Name: <strong id="confirmedStudentName"></strong></p>
-                <p>Homeroom: <strong id="confirmedHomeroom"></strong></p>
-            </div>
-            
-            <div class="instructions">
-                <h3>Instructions:</h3>
-                <ul>
-                    <li><strong>Declarative:</strong> Makes a statement (ends with .)</li>
-                    <li><strong>Interrogative:</strong> Asks a question (ends with ?)</li>
-                    <li><strong>Imperative:</strong> Gives a command (ends with . or !)</li>
-                    <li><strong>Exclamatory:</strong> Shows strong emotion (ends with !)</li>
-                </ul>
-            </div>
+        <h1>Sentence Types Revision</h1>
 
-            <div class="warning-banner">
-                <h3>⚠️ IMPORTANT RULES - READ CAREFULLY</h3>
-                <ul>
-                    <li>🚫 Do NOT switch tabs or minimize this window</li>
-                    <li>🚫 Do NOT use copy, paste, or right-click</li>
-                    <li>🚫 Do NOT open other programs or websites</li>
-                    <li>📊 All activity is tracked and reported to your teacher</li>
-                    <li>⚠️ <strong>FIRST</strong> tab switch = 5-second warning with alarm</li>
-                    <li>⚠️ <strong>SECOND</strong> tab switch = Quiz AUTO-SUBMITS (no second chance!)</li>
-                    <li>✅ Stay on this page until you finish!</li>
-                </ul>
-            </div>
-            
-            <button id="startQuizBtn" class="btn" style="display: none;" onclick="startQuiz()">
-                I Understand - Start Quiz
-            </button>
+        <div class="video-container">
+            <iframe 
+                width="560" 
+                height="315" 
+                src="https://www.youtube.com/embed/MOa5l5DAwOs?modestbranding=1&controls=0&showinfo=0" 
+                title="YouTube video player" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen
+            ></iframe>
         </div>
 
-        <!-- Rest of the previous HTML remains the same -->
-    </div>
+        <div class="content">
+            <h2>Understanding Sentence Types</h2>
+            <p>Sentences can be classified into four main types based on their purpose and structure:</p>
+            
+            <h3>1. Declarative Sentences</h3>
+            <p>These are statements that provide information. They typically end with a period (.).</p>
+            <p><em>Example: "The cat is sleeping on the couch."</em></p>
 
-    <script>
-        // Previous JavaScript remains the same
-    </script>
+            <h3>2. Interrogative Sentences</h3>
+            <p>These are questions that seek information. They always end with a question mark (?).</p>
+            <p><em>Example: "What time does the movie start?"</em></p>
+
+            <h3>3. Imperative Sentences</h3>
+            <p>These are commands or instructions. They can end with a period (.) or an exclamation point (!).</p>
+            <p><em>Example: "Close the door behind you."</em></p>
+
+            <h3>4. Exclamatory Sentences</h3>
+            <p>These express strong emotion or excitement. They always end with an exclamation point (!).</p>
+            <p><em>Example: "What an amazing performance!"</em></p>
+        </div>
+
+        <a href="quiz.html" class="btn">Start Quiz</a>
+    </div>
 </body>
 </html>
