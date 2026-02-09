@@ -461,25 +461,74 @@
             }
         }
 
+        
         // Anti-cheating event listeners
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden && quizActive && !countdownActive) {
-                tabSwitches++;
-                
-                if (!warningGiven) {
-                    warningGiven = true;
-                    logActivity('⚠️ FIRST WARNING - Tab/Window switched away', 'high');
-                    startCountdown();
-                } else {
-                    logActivity('❌ SECOND OFFENSE - Tab/Window switched away', 'critical');
-                    cancelCountdown();
-                    autoSubmitQuiz();
-                }
-            } else if (!document.hidden && countdownActive) {
-                logActivity('✅ Student returned to tab', 'medium');
-                cancelCountdown();
-            }
-        });
+      function playTabSwitchBeep() {
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        // Create a sharp, attention-grabbing beep
+        oscillator.type = 'sine';  // A clean sine wave
+        oscillator.frequency.value = 800;  // High pitch
+
+        // Quick fade in and out for a sharp beep
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.01);
+        gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.1);
+
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (error) {
+        console.error('Error playing beep sound:', error);
+    }
+}
+
+// Modify your existing visibility change event listener
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden && quizActive && !countdownActive) {
+        tabSwitches++;
+        
+        // Play the beep sound
+        playTabSwitchBeep();
+        
+        if (!warningGiven) {
+            warningGiven = true;
+            logActivity('⚠️ FIRST WARNING - Tab/Window switched away', 'high');
+            startCountdown();
+        } else {
+            logActivity('❌ SECOND OFFENSE - Tab/Window switched away', 'critical');
+            cancelCountdown();
+            autoSubmitQuiz();
+        }
+    } else if (!document.hidden && countdownActive) {
+        logActivity('✅ Student returned to tab', 'medium');
+        cancelCountdown();
+    }
+});
+
+        window.addEventListener('blur', function() {
+    if (quizActive && !countdownActive && !document.hidden) {
+        // Play the beep sound
+        playTabSwitchBeep();
+        
+        tabSwitches++;
+        
+        if (!warningGiven) {
+            warningGiven = true;
+            logActivity('⚠️ FIRST WARNING - Window lost focus', 'high');
+            startCountdown();
+        } else {
+            logActivity('❌ SECOND OFFENSE - Window lost focus', 'critical');
+            cancelCountdown();
+            autoSubmitQuiz();
+        }
+    }
+});
 
         document.addEventListener('copy', function(e) {
             if (quizActive) {
