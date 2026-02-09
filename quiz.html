@@ -246,79 +246,24 @@
 
         const options = ["Declarative", "Interrogative", "Imperative", "Exclamatory"];
 
-        // Wait for DOM to be fully loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log("DOM Fully Loaded");
-
-            // Get references to key elements
-            const canteenCodeInput = document.getElementById('canteenCode');
-            const studentNameConfirmation = document.getElementById('studentNameConfirmation');
-            const proceedToQuizBtn = document.getElementById('proceedToQuizBtn');
-
-            // Canteen Code Input Event Listener
-            if (canteenCodeInput) {
-                canteenCodeInput.addEventListener('input', function() {
-                    console.log("Input Event Triggered:", this.value);
-                    
-                    // Reset confirmation
-                    studentNameConfirmation.style.display = 'none';
-                    proceedToQuizBtn.style.display = 'none';
-                    
-                    // If input is 6 digits, attempt validation
-                    if (this.value.trim().length === 6 && /^[0-9]{6}$/.test(this.value)) {
-                        validateCanteenCode();
-                    }
-                });
-            }
-
-            // Proceed to Quiz Button Event Listener
-            if (proceedToQuizBtn) {
-                proceedToQuizBtn.addEventListener('click', function() {
-                    document.getElementById('canteenCodeSection').classList.add('hidden');
-                    document.getElementById('quizSection').classList.remove('hidden');
-                    
-                    // Shuffle and select 10 random questions
-                    quizQuestions = [...questions].sort(() => Math.random() - 0.5).slice(0, 10);
-                    
-                    // Start quiz
-                    startTime = new Date();
-                    quizActive = true;
-                    currentQuestion = 0;
-                    score = 0;
-                    loadQuestion();
-                });
-            }
-        });
-
         // Load class list
         async function loadClassListFromRepo() {
             try {
-                console.log("Attempting to fetch class list");
-                const response = await fetch('../classlist.xls');
+                const response = await fetch('classlist.xls');
                 
                 if (!response.ok) {
-                    console.error('Fetch failed:', response.status, response.statusText);
-                    throw new Error('Failed to load classlist.xls');
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
                 const data = await response.arrayBuffer();
-                console.log("ArrayBuffer received:", data.byteLength);
-                
                 const workbook = XLSX.read(data, { type: 'array' });
-                console.log("Workbook sheets:", workbook.SheetNames);
-                
                 const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                console.log("JSON Data rows:", jsonData.length);
                 
-                const processedData = jsonData.map(row => ({
+                return jsonData.map(row => ({
                     canteenCode: String(row['Canteen Code'] || '').trim(),
                     fullName: (row['FULL NAME'] || '').trim(),
                     homeroom: (row['HOMEROOM'] || '').trim()
                 })).filter(student => student.canteenCode && student.fullName);
-
-                console.log("Processed Students:", processedData);
-                
-                return processedData;
             } catch (error) {
                 console.error('CRITICAL ERROR loading class list:', error);
                 alert('Failed to load student data. Error: ' + error.message);
@@ -328,7 +273,6 @@
 
         // Validate canteen code
         async function validateCanteenCode() {
-            // First time loading data
             if (!studentData) {
                 studentData = await loadClassListFromRepo();
             }
@@ -336,13 +280,11 @@
             const canteenCodeInput = document.getElementById('canteenCode');
             const canteenCode = canteenCodeInput.value.trim();
             
-            // Validate format
             if (!/^[0-9]{6}$/.test(canteenCode)) {
                 alert('Please enter a valid 6-digit Canteen Code');
                 return false;
             }
 
-            // Find student by canteen code
             const matchedStudent = studentData.find(student => 
                 student.canteenCode === canteenCode
             );
@@ -353,7 +295,6 @@
                 document.getElementById('studentNameConfirmation').style.display = 'block';
                 document.getElementById('proceedToQuizBtn').style.display = 'block';
                 
-                // Store student details
                 localStorage.setItem('studentFullName', matchedStudent.fullName);
                 localStorage.setItem('studentHomeroom', matchedStudent.homeroom);
                 localStorage.setItem('studentCanteenCode', canteenCode);
@@ -364,6 +305,34 @@
             alert('Canteen Code not found. Please check and try again.');
             return false;
         }
+
+        // Initialize event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const canteenCodeInput = document.getElementById('canteenCode');
+            const proceedToQuizBtn = document.getElementById('proceedToQuizBtn');
+
+            canteenCodeInput.addEventListener('input', function() {
+                document.getElementById('studentNameConfirmation').style.display = 'none';
+                document.getElementById('proceedToQuizBtn').style.display = 'none';
+                
+                if (this.value.trim().length === 6 && /^[0-9]{6}$/.test(this.value)) {
+                    validateCanteenCode();
+                }
+            });
+
+            proceedToQuizBtn.addEventListener('click', function() {
+                document.getElementById('canteenCodeSection').classList.add('hidden');
+                document.getElementById('quizSection').classList.remove('hidden');
+                
+                quizQuestions = [...questions].sort(() => Math.random() - 0.5).slice(0, 10);
+                
+                startTime = new Date();
+                quizActive = true;
+                currentQuestion = 0;
+                score = 0;
+                loadQuestion();
+            });
+        });
 
         // Load question
         function loadQuestion() {
@@ -380,7 +349,6 @@
             const optionsDiv = document.getElementById('options');
             optionsDiv.innerHTML = '';
             
-            // Shuffle options for each question
             const shuffledOptions = [...options].sort(() => Math.random() - 0.5);
             
             shuffledOptions.forEach(option => {
@@ -394,9 +362,8 @@
             document.getElementById('submitBtn').disabled = true;
         }
 
-        // Select answer option
+        // Select answer
         function selectOption(answer, element) {
-            // Remove previous selection
             document.querySelectorAll('.option').forEach(opt => {
                 opt.classList.remove('selected');
             });
@@ -413,7 +380,6 @@
             const correct = selectedAnswer === quizQuestions[currentQuestion].correct;
             if (correct) score++;
 
-            // Visual feedback
             document.querySelectorAll('.option').forEach(opt => {
                 if (opt.textContent === quizQuestions[currentQuestion].correct) {
                     opt.classList.add('correct');
@@ -431,7 +397,7 @@
             }, 1500);
         }
 
-        // Show final results
+        // Show results
         function showResults() {
             document.getElementById('quizSection').classList.add('hidden');
             document.getElementById('results').classList.remove('hidden');
@@ -439,7 +405,6 @@
             const percentage = Math.round((score / quizQuestions.length) * 100);
             document.getElementById('scoreDisplay').textContent = `${score}/${quizQuestions.length} (${percentage}%)`;
             
-            // Save to database
             const quizData = {
                 student_name: localStorage.getItem('studentFullName'),
                 homeroom: localStorage.getItem('studentHomeroom'),
@@ -454,7 +419,7 @@
             saveToDatabase(quizData);
         }
 
-        // Save quiz data to Supabase
+        // Save to database
         async function saveToDatabase(data) {
             try {
                 const response = await fetch(`${SUPABASE_URL}/rest/v1/quiz_attempts`, {
