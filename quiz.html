@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentence Types Quiz</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        /* Use the same CSS as before */
+        /* (Copy the entire CSS from the previous quiz version) */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📝 Sentence Types Quiz</h1>
+        
+        <div id="canteenCodeSection">
+            <div class="student-info">
+                <label for="canteenCode">Canteen Code:</label>
+                <input 
+                    type="text" 
+                    id="canteenCode" 
+                    placeholder="Enter your 6-digit Canteen Code" 
+                    pattern="[0-9]{6}" 
+                    maxlength="6" 
+                    required
+                >
+                <small>Your 6-digit Canteen Code can be found on your school ID</small>
+            </div>
+
+            <div id="studentNameConfirmation" style="display: none;">
+                <h3>Confirm Your Details</h3>
+                <p>Name: <strong id="confirmedStudentName"></strong></p>
+                <p>Homeroom: <strong id="confirmedHomeroom"></strong></p>
+            </div>
+
+            <button id="proceedToQuizBtn" class="btn" style="display: none;">
+                Proceed to Quiz
+            </button>
+        </div>
+
+        <div id="quizSection" style="display: none;">
+            <!-- Existing quiz HTML from previous version -->
+            <div class="question-card">
+                <div class="question-header">
+                    <span class="question-number" id="questionNumber">Question 1/10</span>
+                </div>
+                
+                <div class="sentence" id="sentence"></div>
+                
+                <div class="options" id="options"></div>
+            </div>
+
+            <button class="btn" id="submitBtn" onclick="submitAnswer()">Submit Answer</button>
+        </div>
+    </div>
+
+    <script>
+        let studentData = null;
+
+        // Load class list
+        async function loadClassListFromRepo() {
+            const response = await fetch('../classlist.xls');
+            const data = await response.arrayBuffer();
+            const workbook = XLSX.read(data, { type: 'array' });
+            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            
+            return jsonData.map(row => ({
+                canteenCode: String(row['Canteen Code'] || '').trim(),
+                fullName: (row['FULL NAME'] || '').trim(),
+                homeroom: (row['HOMEROOM'] || '').trim()
+            })).filter(student => student.canteenCode && student.fullName);
+        }
+
+        async function validateCanteenCode() {
+            if (!studentData) {
+                studentData = await loadClassListFromRepo();
+            }
+
+            const canteenCodeInput = document.getElementById('canteenCode');
+            const canteenCode = canteenCodeInput.value.trim();
+            
+            if (!/^[0-9]{6}$/.test(canteenCode)) {
+                alert('Please enter a valid 6-digit Canteen Code');
+                return false;
+            }
+
+            const matchedStudent = studentData.find(student => 
+                student.canteenCode === canteenCode
+            );
+            
+            if (matchedStudent) {
+                document.getElementById('confirmedStudentName').textContent = matchedStudent.fullName;
+                document.getElementById('confirmedHomeroom').textContent = matchedStudent.homeroom;
+                document.getElementById('studentNameConfirmation').style.display = 'block';
+                document.getElementById('proceedToQuizBtn').style.display = 'block';
+                
+                // Store student details
+                localStorage.setItem('studentFullName', matchedStudent.fullName);
+                localStorage.setItem('studentHomeroom', matchedStudent.homeroom);
+                localStorage.setItem('studentCanteenCode', canteenCode);
+                
+                return true;
+            }
+            
+            alert('Canteen Code not found. Please check and try again.');
+            return false;
+        }
+
+        document.getElementById('canteenCode').addEventListener('input', function() {
+            document.getElementById('studentNameConfirmation').style.display = 'none';
+            document.getElementById('proceedToQuizBtn').style.display = 'none';
+            
+            if (this.value.trim().length === 6 && /^[0-9]{6}$/.test(this.value)) {
+                validateCanteenCode();
+            }
+        });
+
+        document.getElementById('proceedToQuizBtn').addEventListener('click', function() {
+            document.getElementById('canteenCodeSection').style.display = 'none';
+            document.getElementById('quizSection').style.display = 'block';
+            
+            // Start quiz logic
+            startTime = new Date();
+            quizActive = true;
+            loadQuestion();
+            startTimer();
+        });
+
+        // Rest of the quiz script remains the same
+        // (Include all the previous quiz functionality)
+    </script>
+</body>
+</html>
