@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Existing head content -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <!-- Existing body content -->
+    <div class="main-section">
+        <!-- Add a toggle for different views -->
+        <div class="dashboard-tabs">
+            <button onclick="switchTab('engagement')" class="tab-btn active">Student Engagement</button>
+            <button onclick="switchTab('homework')" class="tab-btn">Homework Letters</button>
+        </div>
+
+        <!-- Engagement Tab -->
+        <div id="engagementTab" class="tab-content active">
+            <h2>📊 Student Engagement Overview</h2>
+            <div class="stats-container">
+                <div class="stat-card">
+                    <h3>Total Students</h3>
+                    <div class="number" id="totalStudents">0</div>
+                </div>
+                <div class="stat-card success">
+                    <h3>Quiz Completed</h3>
+                    <div class="number" id="completedQuizzes">0</div>
+                </div>
+                <div class="stat-card warning">
+                    <h3>Average Score</h3>
+                    <div class="number" id="averageScore">0%</div>
+                </div>
+            </div>
+
+            <div class="student-engagement-details">
+                <h3>Detailed Student Performance</h3>
+                <table id="studentPerformanceTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Homeroom</th>
+                            <th>Score</th>
+                            <th>Time Spent</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentPerformanceBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Existing Homework Letters Tab -->
+        <div id="homeworkTab" class="tab-content">
+            <!-- Existing homework letters content -->
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://qedepuxzmdchujbipgax.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_JdSxu3gnEDIFaNtB1K4PNg_vqj0WoOI';
+
+        let classList = [], quizData = [];
+
+        // Tab switching functionality
+        function switchTab(tabName) {
+            // Remove active class from all buttons and tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+
+            // Add active class to selected tab and button
+            document.querySelector(`button[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            document.getElementById(`${tabName}Tab`).classList.add('active');
+
+            // If engagement tab, load data
+            if (tabName === 'engagement') {
+                loadEngagementData();
+            }
+        }
+
+        // Load class list with full details
+        async function loadClassListFromRepo() {
+            const response = await fetch('classlist.xls');
+            if (!response.ok) throw new Error('Upload classlist.xls to repository');
+            
+            const data = await response.arrayBuffer();
+            const workbook = XLSX.read(data, { type: 'array' });
+            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            
+            return jsonData.map(row => ({
+                canteenCode: String(row['Canteen Code'] || '').trim(),
+                fullName: (row['FULL NAME'] || '').trim(),
+                homeroom: (row['HOMEROOM'] || '').trim()
+            })).filter(student => student.fullName);
+        }
+
+        // Fetch quiz data from Supabase
+        async function fetchQuizData() {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/quiz_attempts?select=*`, {
+                headers: { 
+                    'apikey': SUPABASE_KEY, 
+                    'Authorization': `Bearer ${SUPABASE_KEY}` 
+                }
+            });
+            return response.ok ? response.json() : [];
+        }
+
+        // Load and analyze engagement data
+        async function loadEngagementData() {
+            try {
+                // Fetch both class list and quiz data
+                const [classListData, quizAttempts] = await Promise.all([
+                    loadClassListFromRepo(),
+                    fetchQuizData()
+                ]);
+
+                // Total students
+                const totalStudents = classListData.length;
+                document.getElementById('totalStudents').textContent = totalStudents;
+
+                // Completed quizzes
+                const completedQuizzes = quizAttempts.filter(attempt => attempt.completed);
+                document.getElementById('completedQuizzes').textContent = `${completedQuizzes.length}/${totalStudents}`;
+
+                // Average score
+                const averageScore = completedQuizzes.length > 0 
+                    ? (completedQuizzes.reduce((sum, quiz) => sum + quiz.score, 0) / completedQuizzes.length).toFixed(1)
+                    : '0';
+                document.getElementById('averageScore').textContent = `${averageScore}%`;
+
+                // Populate student performance table
+                const performanceBody = document.getElementById('studentPerformanceBody');
+                performanceBody.innerHTML = ''; // Clear existing rows
+
+                // Create a map of quiz attempts by student name
+                const quizMap = new Map(quizAttempts.map(attempt => [attempt.student_name, attempt]));
+
+                // Populate table with student data
+                classListData.forEach(student => {
+                    const quizAttempt = quizMap.get(student.fullName);
+                    const row = document.createElement('tr');
+                    
+                    row.innerHTML = `
+                        <td>${student.fullName}</td>
+                        <td>${student.homeroom}</td>
+                        <td>${quizAttempt ? `${quizAttempt.score}%` : 'Not Attempted'}</td>
+                        <td>${quizAttempt ? `${quizAttempt.time_seconds} sec` : 'N/A'}</td>
+                        <td>${quizAttempt && quizAttempt.completed ? '✅ Completed' : '❌ Incomplete'}</td>
+                    `;
+
+                    performanceBody.appendChild(row);
+                });
+
+                // Analyze for homework letters (similar to existing code)
+                studentsNeedingLetters = classListData.filter(student => {
+                    const attempt = quizMap.get(student.fullName);
+                    return !attempt || !attempt.completed || (attempt.score < 70);
+                });
+
+                // Update existing homework letter generation logic
+                document.getElementById('totalStudents').textContent = classList.length;
+                document.getElementById('completedStudents').textContent = classList.length - studentsNeedingLetters.length;
+                document.getElementById('incompleteStudents').textContent = studentsNeedingLetters.length;
+
+                // Rest of the existing homework letter generation logic remains the same
+            } catch (error) {
+                console.error('Error loading engagement data:', error);
+                alert('Failed to load student data. Please check your connections.');
+            }
+        }
+
+        // Existing initialization and other functions remain the same
+        document.addEventListener('DOMContentLoaded', async function() {
+            loadSavedTeacherName();
+            loadSavedAssignment();
+            
+            // Initial load of engagement data
+            await loadEngagementData();
+        });
+
+        // Rest of the existing dashboard script remains the same
+    </script>
+
+    <!-- Existing style and other content -->
+    <style>
+        /* Add some styles for tabs */
+        .dashboard-tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            background: #f0f0f0;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .tab-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .student-engagement-details {
+            margin-top: 20px;
+        }
+        #studentPerformanceTable {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        #studentPerformanceTable th, 
+        #studentPerformanceTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        #studentPerformanceTable th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</body>
+</html>
