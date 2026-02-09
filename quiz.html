@@ -254,21 +254,30 @@
         // Load class list
       async function loadClassListFromRepo() {
     try {
+        console.log("🚨 ATTEMPTING FILE FETCH 🚨");
         console.log("Current URL:", window.location.href);
         console.log("Attempting fetch methods:");
         
         const fetchMethods = [
             'classlist.xls',
             './classlist.xls',
-            '../classlist.xls',
-            '/classlist.xls'
+            '/classlist.xls',
+            '../classlist.xls'
         ];
 
         for (let method of fetchMethods) {
-            console.log(`Trying: ${method}`);
+            console.log(`Trying fetch: ${method}`);
             try {
                 const response = await fetch(method);
                 
+                console.log(`Fetch response for ${method}:`, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok,
+                    type: response.type,
+                    url: response.url
+                });
+
                 if (response.ok) {
                     console.log(`✅ Successfully fetched via: ${method}`);
                     const data = await response.arrayBuffer();
