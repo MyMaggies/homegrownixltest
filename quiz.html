@@ -6,8 +6,150 @@
     <title>Sentence Types Quiz</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        /* Use the same CSS as before */
-        /* (Copy the entire CSS from the previous quiz version) */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .student-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .student-info input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        #studentNameConfirmation {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .question-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .sentence {
+            font-size: 20px;
+            font-style: italic;
+            color: #333;
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-left: 4px solid #667eea;
+        }
+
+        .options {
+            display: grid;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .option {
+            padding: 15px 20px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 16px;
+        }
+
+        .option:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .option.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .option.correct {
+            background: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+
+        .option.incorrect {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -16,31 +158,33 @@
         
         <div id="canteenCodeSection">
             <div class="student-info">
-                <label for="canteenCode">Canteen Code:</label>
+                <label for="canteenCode" style="display: block; margin-bottom: 8px; font-weight: bold;">Canteen Code:</label>
                 <input 
                     type="text" 
                     id="canteenCode" 
                     placeholder="Enter your 6-digit Canteen Code" 
                     pattern="[0-9]{6}" 
                     maxlength="6" 
-                    required
+                    required 
+                    style="user-select: text;"
                 >
-                <small>Your 6-digit Canteen Code can be found on your school ID</small>
+                <small style="color: #666; display: block; margin-top: 5px;">
+                    Your 6-digit Canteen Code can be found on your school ID
+                </small>
             </div>
-
+            
             <div id="studentNameConfirmation" style="display: none;">
                 <h3>Confirm Your Details</h3>
                 <p>Name: <strong id="confirmedStudentName"></strong></p>
                 <p>Homeroom: <strong id="confirmedHomeroom"></strong></p>
             </div>
-
+            
             <button id="proceedToQuizBtn" class="btn" style="display: none;">
                 Proceed to Quiz
             </button>
         </div>
 
-        <div id="quizSection" style="display: none;">
-            <!-- Existing quiz HTML from previous version -->
+        <div id="quizSection" class="hidden">
             <div class="question-card">
                 <div class="question-header">
                     <span class="question-number" id="questionNumber">Question 1/10</span>
@@ -53,9 +197,36 @@
 
             <button class="btn" id="submitBtn" onclick="submitAnswer()">Submit Answer</button>
         </div>
+
+        <div class="hidden" id="results">
+            <h2>Quiz Complete! 🎉</h2>
+            <div class="score" id="scoreDisplay"></div>
+            <div class="stats" id="stats"></div>
+            <button class="btn" onclick="location.reload()">Take Quiz Again</button>
+        </div>
     </div>
 
     <script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://qedepuxzmdchujbipgax.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_JdSxu3gnEDIFaNtB1K4PNg_vqj0WoOI';
+
+        // Question bank (keep the existing questions)
+        const questions = [
+            { sentence: "What time does the movie start?", correct: "Interrogative" },
+            { sentence: "The sun rises in the east.", correct: "Declarative" },
+            // ... (rest of the existing questions)
+        ];
+
+        const options = ["Declarative", "Interrogative", "Imperative", "Exclamatory"];
+
+        // Quiz variables
+        let currentQuestion = 0;
+        let score = 0;
+        let selectedAnswer = null;
+        let startTime;
+        let quizActive = false;
+
         let studentData = null;
 
         // Load class list
@@ -72,6 +243,7 @@
             })).filter(student => student.canteenCode && student.fullName);
         }
 
+        // Validate canteen code
         async function validateCanteenCode() {
             if (!studentData) {
                 studentData = await loadClassListFromRepo();
@@ -107,6 +279,7 @@
             return false;
         }
 
+        // Event listeners
         document.getElementById('canteenCode').addEventListener('input', function() {
             document.getElementById('studentNameConfirmation').style.display = 'none';
             document.getElementById('proceedToQuizBtn').style.display = 'none';
@@ -117,18 +290,127 @@
         });
 
         document.getElementById('proceedToQuizBtn').addEventListener('click', function() {
-            document.getElementById('canteenCodeSection').style.display = 'none';
-            document.getElementById('quizSection').style.display = 'block';
+            document.getElementById('canteenCodeSection').classList.add('hidden');
+            document.getElementById('quizSection').classList.remove('hidden');
             
+            // Shuffle and select 10 random questions
+            let quizQuestions = [...questions].sort(() => Math.random() - 0.5).slice(0, 10);
+
             // Start quiz logic
             startTime = new Date();
             quizActive = true;
             loadQuestion();
-            startTimer();
         });
 
-        // Rest of the quiz script remains the same
-        // (Include all the previous quiz functionality)
+        // Existing quiz functions (loadQuestion, selectOption, submitAnswer, etc.)
+        function loadQuestion() {
+            if (currentQuestion >= 10) {
+                showResults();
+                return;
+            }
+
+            selectedAnswer = null;
+            
+            document.getElementById('questionNumber').textContent = `Question ${currentQuestion + 1}/10`;
+            document.getElementById('sentence').textContent = `"${questions[currentQuestion].sentence}"`;
+            
+            const optionsDiv = document.getElementById('options');
+            optionsDiv.innerHTML = '';
+            
+            // Shuffle options for each question
+            const shuffledOptions = [...options].sort(() => Math.random() - 0.5);
+            
+            shuffledOptions.forEach(option => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option';
+                optionDiv.textContent = option;
+                optionDiv.onclick = () => selectOption(option, optionDiv);
+                optionsDiv.appendChild(optionDiv);
+            });
+
+            document.getElementById('submitBtn').disabled = true;
+        }
+
+        function selectOption(answer, element) {
+            // Remove previous selection
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            element.classList.add('selected');
+            selectedAnswer = answer;
+            document.getElementById('submitBtn').disabled = false;
+        }
+
+        function submitAnswer() {
+            if (!selectedAnswer) return;
+
+            const correct = selectedAnswer === questions[currentQuestion].correct;
+            if (correct) score++;
+
+            // Visual feedback
+            document.querySelectorAll('.option').forEach(opt => {
+                if (opt.textContent === questions[currentQuestion].correct) {
+                    opt.classList.add('correct');
+                } else if (opt.textContent === selectedAnswer && !correct) {
+                    opt.classList.add('incorrect');
+                }
+                opt.style.pointerEvents = 'none';
+            });
+
+            document.getElementById('submitBtn').disabled = true;
+
+            setTimeout(() => {
+                currentQuestion++;
+                loadQuestion();
+            }, 1500);
+        }
+
+        function showResults() {
+            document.getElementById('quizSection').classList.add('hidden');
+            document.getElementById('results').classList.remove('hidden');
+            
+            const percentage = Math.round((score / 10) * 100);
+            document.getElementById('scoreDisplay').textContent = `${score}/10 (${percentage}%)`;
+            
+            // Save to database
+            const quizData = {
+                student_name: localStorage.getItem('studentFullName'),
+                homeroom: localStorage.getItem('studentHomeroom'),
+                canteen_code: localStorage.getItem('studentCanteenCode'),
+                assignment_name: 'Sentence Types Quiz',
+                completed: true,
+                score: percentage,
+                total_questions: 10,
+                date_completed: new Date().toISOString()
+            };
+
+            saveToDatabase(quizData);
+        }
+
+        // Save quiz data to Supabase
+        async function saveToDatabase(data) {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/quiz_attempts`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    console.log('✅ Quiz saved to database!');
+                } else {
+                    console.error('❌ Error saving to database:', await response.text());
+                }
+            } catch (error) {
+                console.error('❌ Network error:', error);
+            }
+        }
     </script>
 </body>
 </html>
