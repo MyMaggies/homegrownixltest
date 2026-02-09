@@ -452,15 +452,22 @@
     doc.text('Kindly encourage your son to submit these tasks on ManageBac. If he fails to submit, the homework policy will apply.', 25, yPos);
     yPos += 15;
 
+     doc.setFontSize(12);
+    doc.setFont(undefined, 'normal');
     doc.text('Sincerely,', 25, yPos);
     yPos += 10;
 
-    doc.setFont(undefined, 'bold');
-    doc.text(teacherName, 25, yPos);
+    doc.text('Mr. Louis Pienaar', 25, yPos);
+    yPos += 5;
+    doc.text('MYP English Teacher - Boys', 25, yPos);
+    yPos += 10;
+
+    doc.text('Mr. Atiq Salakh Uddin', 25, yPos);
+    yPos += 5;
+    doc.text('Head of Upper School - Boys (Grades 9-12)', 25, yPos);
 
     return doc;
 }
-
         // Generate All PDFs
         async function generateAllPDFs() {
             if (!letterheadImage) {
