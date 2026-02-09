@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <base href="./">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sentence Types Quiz</title>
@@ -53,6 +52,15 @@
             font-size: 16px;
             user-select: text;
             -webkit-user-select: text;
+        }
+
+        .quiz-instructions {
+            background: #f0f8ff;
+            border: 2px solid #4a90e2;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            color: #2c3e50;
         }
 
         .btn {
@@ -180,6 +188,17 @@
                 <p>Homeroom: <strong id="confirmedHomeroom"></strong></p>
             </div>
             
+            <div id="quizInstructions" class="quiz-instructions" style="display: none;">
+                <h4>🔍 Quiz Instructions</h4>
+                <p>Please ensure you:</p>
+                <ul>
+                    <li>Stay on this page throughout the quiz</li>
+                    <li>Do not switch tabs or minimize the window</li>
+                    <li>Complete the quiz in one sitting</li>
+                </ul>
+                <p>If you switch tabs, the quiz may automatically submit.</p>
+            </div>
+            
             <button id="proceedToQuizBtn" class="btn" style="display: none;">
                 Proceed to Quiz
             </button>
@@ -208,23 +227,25 @@
     </div>
 
     <script>
-        // DEBUG: SCRIPT IS RUNNING
-    console.log("🚨 QUIZ SCRIPT LOADED 🚨");
-    console.log("Current window location:", window.location.href);
-    console.log("Current document URL:", document.URL);
-
-        // Supabase Configuration
         const SUPABASE_URL = 'https://qedepuxzmdchujbipgax.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_JdSxu3gnEDIFaNtB1K4PNg_vqj0WoOI';
 
-        // Global variables
         let studentData = null;
         let currentQuestion = 0;
         let score = 0;
         let selectedAnswer = null;
         let startTime;
-        let quizActive = false;
         let quizQuestions = [];
+
+        // Anti-cheating global variables
+        let tabSwitches = 0;
+        let copyAttempts = 0;
+        let pasteAttempts = 0;
+        let rightClickAttempts = 0;
+        let quizActive = false;
+        let warningGiven = false;
+        let countdownActive = false;
+        let countdownInterval = null;
 
         // Question bank
         const questions = [
@@ -253,58 +274,19 @@
         const options = ["Declarative", "Interrogative", "Imperative", "Exclamatory"];
 
         // Load class list
-      async function loadClassListFromRepo() {
-    try {
-        console.log("🚨 ATTEMPTING FILE FETCH 🚨");
-        console.log("Current URL:", window.location.href);
-        console.log("Attempting fetch methods:");
-        
-        const fetchMethods = [
-            'classlist.xls',
-            './classlist.xls',
-            '/classlist.xls',
-            '../classlist.xls'
-        ];
-
-        for (let method of fetchMethods) {
-            console.log(`Trying fetch: ${method}`);
-            try {
-                const response = await fetch(method);
-                
-                console.log(`Fetch response for ${method}:`, {
-                    status: response.status,
-                    statusText: response.statusText,
-                    ok: response.ok,
-                    type: response.type,
-                    url: response.url
-                });
-
-                if (response.ok) {
-                    console.log(`✅ Successfully fetched via: ${method}`);
-                    const data = await response.arrayBuffer();
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                    
-                    console.log("Loaded rows:", jsonData.length);
-                    
-                    return jsonData.map(row => ({
-                        canteenCode: String(row['Canteen Code'] || '').trim(),
-                        fullName: (row['FULL NAME'] || '').trim(),
-                        homeroom: (row['HOMEROOM'] || '').trim()
-                    })).filter(student => student.canteenCode && student.fullName);
-                }
-            } catch (specificError) {
-                console.error(`Error with ${method}:`, specificError);
-            }
+        async function loadClassListFromRepo() {
+            const response = await fetch('classlist.xls');
+            const data = await response.arrayBuffer();
+            const workbook = XLSX.read(data, { type: 'array' });
+            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            
+            return jsonData.map(row => ({
+                canteenCode: String(row['Canteen Code'] || '').trim(),
+                fullName: (row['FULL NAME'] || '').trim(),
+                homeroom: (row['HOMEROOM'] || '').trim()
+            })).filter(student => student.fullName);
         }
 
-        throw new Error('No working fetch method found');
-    } catch (error) {
-        console.error('CRITICAL ERROR loading class list:', error);
-        alert('Failed to load student data. Check console for details.');
-        return [];
-    }
-}
         // Validate canteen code
         async function validateCanteenCode() {
             if (!studentData) {
@@ -327,6 +309,7 @@
                 document.getElementById('confirmedStudentName').textContent = matchedStudent.fullName;
                 document.getElementById('confirmedHomeroom').textContent = matchedStudent.homeroom;
                 document.getElementById('studentNameConfirmation').style.display = 'block';
+                document.getElementById('quizInstructions').style.display = 'block';
                 document.getElementById('proceedToQuizBtn').style.display = 'block';
                 
                 localStorage.setItem('studentFullName', matchedStudent.fullName);
@@ -340,32 +323,29 @@
             return false;
         }
 
-        // Initialize event listeners
-        document.addEventListener('DOMContentLoaded', function() {
-            const canteenCodeInput = document.getElementById('canteenCode');
-            const proceedToQuizBtn = document.getElementById('proceedToQuizBtn');
+        // Event listener for canteen code input
+        document.getElementById('canteenCode').addEventListener('input', function() {
+            document.getElementById('studentNameConfirmation').style.display = 'none';
+            document.getElementById('quizInstructions').style.display = 'none';
+            document.getElementById('proceedToQuizBtn').style.display = 'none';
+            
+            if (this.value.trim().length === 6 && /^[0-9]{6}$/.test(this.value)) {
+                validateCanteenCode();
+            }
+        });
 
-            canteenCodeInput.addEventListener('input', function() {
-                document.getElementById('studentNameConfirmation').style.display = 'none';
-                document.getElementById('proceedToQuizBtn').style.display = 'none';
-                
-                if (this.value.trim().length === 6 && /^[0-9]{6}$/.test(this.value)) {
-                    validateCanteenCode();
-                }
-            });
-
-            proceedToQuizBtn.addEventListener('click', function() {
-                document.getElementById('canteenCodeSection').classList.add('hidden');
-                document.getElementById('quizSection').classList.remove('hidden');
-                
-                quizQuestions = [...questions].sort(() => Math.random() - 0.5).slice(0, 10);
-                
-                startTime = new Date();
-                quizActive = true;
-                currentQuestion = 0;
-                score = 0;
-                loadQuestion();
-            });
+        // Event listener for proceed to quiz button
+        document.getElementById('proceedToQuizBtn').addEventListener('click', function() {
+            document.getElementById('canteenCodeSection').classList.add('hidden');
+            document.getElementById('quizSection').classList.remove('hidden');
+            
+            quizQuestions = [...questions].sort(() => Math.random() - 0.5).slice(0, 10);
+            
+            startTime = new Date();
+            quizActive = true;
+            currentQuestion = 0;
+            score = 0;
+            loadQuestion();
         });
 
         // Load question
@@ -447,7 +427,11 @@
                 completed: true,
                 score: percentage,
                 total_questions: quizQuestions.length,
-                date_completed: new Date().toISOString()
+                date_completed: new Date().toISOString(),
+                tab_switches: tabSwitches,
+                copy_attempts: copyAttempts,
+                paste_attempts: pasteAttempts,
+                right_click_attempts: rightClickAttempts
             };
 
             saveToDatabase(quizData);
@@ -475,6 +459,93 @@
             } catch (error) {
                 console.error('❌ Network error:', error);
             }
+        }
+
+        // Anti-cheating event listeners
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden && quizActive && !countdownActive) {
+                tabSwitches++;
+                
+                if (!warningGiven) {
+                    warningGiven = true;
+                    logActivity('⚠️ FIRST WARNING - Tab/Window switched away', 'high');
+                    startCountdown();
+                } else {
+                    logActivity('❌ SECOND OFFENSE - Tab/Window switched away', 'critical');
+                    cancelCountdown();
+                    autoSubmitQuiz();
+                }
+            } else if (!document.hidden && countdownActive) {
+                logActivity('✅ Student returned to tab', 'medium');
+                cancelCountdown();
+            }
+        });
+
+        document.addEventListener('copy', function(e) {
+            if (quizActive) {
+                e.preventDefault();
+                copyAttempts++;
+                logActivity('Copy attempt blocked', 'high');
+                return false;
+            }
+        });
+
+        document.addEventListener('paste', function(e) {
+            if (quizActive) {
+                e.preventDefault();
+                pasteAttempts++;
+                logActivity('Paste attempt blocked', 'high');
+                return false;
+            }
+        });
+
+        document.addEventListener('contextmenu', function(e) {
+            if (quizActive) {
+                e.preventDefault();
+                rightClickAttempts++;
+                logActivity('Right-click attempt', 'medium');
+                return false;
+            }
+        });
+
+        // Logging and countdown functions
+        function logActivity(activity, severity = 'medium') {
+            console.log('ACTIVITY LOGGED:', { timestamp: new Date().toLocaleTimeString(), activity });
+        }
+
+        function startCountdown() {
+            if (countdownActive) return;
+            
+            countdownActive = true;
+            let secondsLeft = 5;
+            
+            document.getElementById('countdownWarning').style.display = 'block';
+            document.getElementById('countdownTimer').textContent = secondsLeft;
+            
+            countdownInterval = setInterval(() => {
+                secondsLeft--;
+                document.getElementById('countdownTimer').textContent = secondsLeft;
+                
+                if (secondsLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    countdownActive = false;
+                    autoSubmitQuiz();
+                }
+            }, 1000);
+        }
+
+        function cancelCountdown() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+            countdownActive = false;
+            document.getElementById('countdownWarning').style.display = 'none';
+        }
+
+        function autoSubmitQuiz() {
+            alert('Quiz automatically submitted due to switching tabs.');
+            showResults();
         }
     </script>
 </body>
