@@ -333,7 +333,9 @@ async function loadHomeworkData() {
 
         studentsNeedingLetters = classListData.filter(student => {
             const attempt = quizMap.get(student.fullName);
-            return !attempt || !attempt.completed || (attempt.score < 70);
+            
+            // If no attempt OR attempt exists but meets criteria for needing a letter
+            return !attempt || (!attempt.completed && attempt.score < 70);
         });
 
         document.getElementById('totalClassStudents').textContent = totalStudents;
