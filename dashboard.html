@@ -428,7 +428,7 @@
             }
         }
 
-       function generatePDFForStudent(student) {
+     function generatePDFForStudent(student) {
     const teacherName = localStorage.getItem('teacherName') || 'Teacher';
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
