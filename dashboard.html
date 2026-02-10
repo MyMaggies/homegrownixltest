@@ -310,23 +310,40 @@
             }
         }
 
-        function switchTab(tabName) {
+       function switchTab(tabName) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
 
     document.querySelector(`button[onclick="switchTab('${tabName}')"]`).classList.add('active');
     document.getElementById(`${tabName}Tab`).classList.add('active');
 
-    // Add console logs for debugging
-    console.log(`Switching to tab: ${tabName}`);
-
     if (tabName === 'engagement') loadEngagementData();
-    if (tabName === 'homework') {
-        // Force a reload of homework data each time the tab is switched
-        loadHomeworkData();
-    }
-        }
+    if (tabName === 'homework') loadHomeworkData();
+}
 
+async function loadHomeworkData() {
+    try {
+        const [classListData, quizAttempts] = await Promise.all([
+            loadClassListFromRepo(),
+            fetchQuizData()
+        ]);
+
+        const totalStudents = classListData.length;
+        const quizMap = new Map(quizAttempts.map(attempt => [attempt.student_name, attempt]));
+
+        studentsNeedingLetters = classListData.filter(student => {
+            const attempt = quizMap.get(student.fullName);
+            return !attempt || !attempt.completed || (attempt.score < 70);
+        });
+
+        document.getElementById('totalClassStudents').textContent = totalStudents;
+        document.getElementById('completedStudents').textContent = totalStudents - studentsNeedingLetters.length;
+        document.getElementById('incompleteStudents').textContent = studentsNeedingLetters.length;
+    } catch (error) {
+        console.error('Error loading homework data:', error);
+        alert('Failed to load student data.');
+    }
+}
         async function loadLetterhead() {
             const response = await fetch('letterhead.png');
             const blob = await response.blob();
