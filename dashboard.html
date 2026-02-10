@@ -333,18 +333,13 @@ async function loadHomeworkData() {
 
         const totalStudents = classListData.length;
         
-        // Create a map of completed attempts with score filtering
-        const completedAttempts = quizAttempts.filter(attempt => 
-            attempt.completed && attempt.score >= 70
+        // Create a map of quiz attempts keyed by student name
+        const quizAttemptsMap = new Map(
+            quizAttempts.map(attempt => [attempt.student_name, attempt])
         );
 
-        console.log('COMPLETED ATTEMPTS:', completedAttempts);
-
         studentsNeedingLetters = classListData.filter(student => {
-            // Find the matching attempt for this student
-            const attempt = quizAttempts.find(
-                a => a.student_name.trim().toLowerCase() === student.fullName.trim().toLowerCase()
-            );
+            const attempt = quizAttemptsMap.get(student.fullName);
 
             console.log(`Student: ${student.fullName}`);
             console.log('Matching Attempt:', attempt);
@@ -375,7 +370,8 @@ async function loadHomeworkData() {
         console.log('Students Needing Letters:', studentsNeedingLetters);
 
         document.getElementById('totalClassStudents').textContent = totalStudents;
-        document.getElementById('completedStudents').textContent = completedAttempts.length;
+        document.getElementById('completedStudents').textContent = 
+            quizAttempts.filter(attempt => attempt.completed && attempt.score >= 70).length;
         document.getElementById('incompleteStudents').textContent = studentsNeedingLetters.length;
     } catch (error) {
         console.error('Error loading homework data:', error);
