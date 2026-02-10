@@ -328,22 +328,20 @@ async function loadHomeworkData() {
             fetchQuizData()
         ]);
 
+        console.log('ALL CLASS LIST DATA:', classListData);
+        console.log('ALL QUIZ ATTEMPTS:', quizAttempts);
+
         const totalStudents = classListData.length;
         
-        // Create a map of students by canteen code
-        const canteenCodeMap = new Map(classListData.map(student => [
-            student.canteenCode, 
-            student
-        ]));
+        // Comprehensive logging of localStorage data
+        console.log('ALL LOCALSTORAGE DATA:', {
+            studentFullName: localStorage.getItem('studentFullName'),
+            studentHomeroom: localStorage.getItem('studentHomeroom'),
+            studentCanteenCode: localStorage.getItem('studentCanteenCode')
+        });
 
         studentsNeedingLetters = quizAttempts.filter(attempt => {
-            // Find the student using the canteen code from localStorage during quiz
-            const studentCanteenCode = localStorage.getItem('studentCanteenCode');
-            const student = canteenCodeMap.get(studentCanteenCode);
-            
-            console.log('Attempt:', attempt);
-            console.log('Student Canteen Code:', studentCanteenCode);
-            console.log('Matching Student:', student);
+            console.log('PROCESSING ATTEMPT:', attempt);
             
             // Conditions for needing a letter
             if (!attempt.completed) {
