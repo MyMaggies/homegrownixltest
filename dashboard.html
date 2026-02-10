@@ -428,57 +428,57 @@
             }
         }
 
-        function generatePDFForStudent(student) {
-            const teacherName = localStorage.getItem('teacherName') || 'Teacher';
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-            
-            doc.addImage(letterheadImage, 'PNG', 0, 0, 297, 210);
-            
-            doc.setFontSize(12);
-            doc.setMargins(25, 25, 25, 25);
-            
-            let yPos = 50;
-            doc.text(`Date: ${new Date().toLocaleDateString()}`, 25, yPos);
-            yPos += 10;
+       function generatePDFForStudent(student) {
+    const teacherName = localStorage.getItem('teacherName') || 'Teacher';
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    
+    doc.addImage(letterheadImage, 'PNG', 0, 0, 297, 210);
+    
+    doc.setFontSize(12);
+    doc.setMargins(25, 25, 25, 25);
+    
+    let yPos = 50;
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 25, yPos);
+    yPos += 10;
 
-            doc.setFontSize(13);
-            doc.text('Incomplete Homework', 25, yPos);
-            yPos += 10;
+    doc.setFontSize(13);
+    doc.text('Incomplete Homework', 25, yPos);
+    yPos += 10;
 
-            doc.setFontSize(12);
-            doc.text(`Dear Parent of ${student.fullName}`, 25, yPos);
-            yPos += 10;
+    doc.setFontSize(12);
+    doc.text(`Dear Parent of ${student.fullName}`, 25, yPos);
+    yPos += 10;
 
-            doc.text('Assalamu Aleikum', 25, yPos);
-            yPos += 10;
+    doc.text('Assalamu Aleikum', 25, yPos);
+    yPos += 10;
 
-            doc.text(`Kindly be informed that your son has failed to complete the following tasks from his English Homework: Sentences Type Quiz`, 25, yPos);
-            yPos += 10;
+    doc.text(`Kindly be informed that your son has failed to complete the following tasks from his English Homework: Sentences Type Quiz`, 25, yPos);
+    yPos += 10;
 
-            doc.text('Please note that as a result, his Quarterly grades might be negatively affected.', 25, yPos);
-            yPos += 10;
+    doc.text('Please note that as a result, his Quarterly grades might be negatively affected.', 25, yPos);
+    yPos += 10;
 
-            doc.text('Kindly encourage your son to submit these tasks on ManageBac. If he fails to submit, the homework policy will apply.', 25, yPos);
-            yPos += 15;
+    doc.text('Kindly encourage your son to submit these tasks on ManageBac. If he fails to submit, the homework policy will apply.', 25, yPos);
+    yPos += 15;
 
-            doc.text('Sincerely,', 25, yPos);
-            yPos += 10;
+    doc.text('Sincerely,', 25, yPos);
+    yPos += 10;
 
-            doc.setFont(undefined, 'normal');
-            doc.text('Mr. Louis Pienaar', 25, yPos);
-            yPos += 5;
-            doc.text('MYP English Teacher - Boys', 25, yPos);
-            yPos += 10;
+    doc.setFont(undefined, 'normal');
+    doc.text('Mr. Louis Pienaar', 25, yPos);
+    yPos += 5;
+    doc.text('MYP English Teacher - Boys', 25, yPos);
+    yPos += 10;
 
-            doc.text('Mr. Atiq Salakh Uddin', 25, yPos);
-            yPos += 5;
-            doc.text('Head of Upper School - Boys (Grades 9-12)', 25, yPos);
+    doc.text('Mr. Atiq Salakh Uddin', 25, yPos);
+    yPos += 5;
+    doc.text('Head of Upper School - Boys (Grades 9-12)', 25, yPos);
 
-            return doc;
-        }
+    return doc;
+}
 
-      async function generateAllPDFs() {
+async function generateAllPDFs() {
     // Ensure homework data is loaded first
     await loadHomeworkData();
 
