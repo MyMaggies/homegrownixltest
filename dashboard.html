@@ -334,9 +334,34 @@ async function loadHomeworkData() {
         studentsNeedingLetters = classListData.filter(student => {
             const attempt = quizMap.get(student.fullName);
             
-            // If no attempt OR attempt exists but meets criteria for needing a letter
-            return !attempt || (!attempt.completed && attempt.score < 70);
+            // Detailed logging to understand filtering
+            console.log(`Checking student: ${student.fullName}`);
+            console.log('Attempt:', attempt);
+
+            // Only need letter if:
+            // 1. No attempt at all
+            // 2. Attempt exists but not completed
+            // 3. Attempt exists, completed, but score is less than 70
+            if (!attempt) {
+                console.log(`${student.fullName}: No attempt - needs letter`);
+                return true;
+            }
+
+            if (!attempt.completed) {
+                console.log(`${student.fullName}: Not completed - needs letter`);
+                return true;
+            }
+
+            if (attempt.score < 70) {
+                console.log(`${student.fullName}: Score below 70 (${attempt.score}) - needs letter`);
+                return true;
+            }
+
+            console.log(`${student.fullName}: Does not need letter`);
+            return false;
         });
+
+        console.log('Students Needing Letters:', studentsNeedingLetters);
 
         document.getElementById('totalClassStudents').textContent = totalStudents;
         document.getElementById('completedStudents').textContent = totalStudents - studentsNeedingLetters.length;
