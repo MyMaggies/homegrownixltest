@@ -447,14 +447,13 @@
     }
 }
 
-    function generatePDFForStudent(student) {
+   function generatePDFForStudent(student) {
     const teacherName = localStorage.getItem('teacherName') || 'Teacher';
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ 
         orientation: 'landscape', 
         unit: 'mm', 
         format: 'a4',
-        // Remove setMargins, instead use margins in addPage or initial config
         margins: {
             top: 25,
             bottom: 25,
@@ -471,12 +470,15 @@
     doc.text(`Date: ${new Date().toLocaleDateString()}`, 25, yPos);
     yPos += 10;
 
+    // Centered, bold "Incomplete Homework"
+    doc.setFont(undefined, 'bold');
     doc.setFontSize(13);
-    doc.text('Incomplete Homework', 25, yPos);
+    doc.text('Incomplete Homework', 148.5, yPos, { align: 'center' });
     yPos += 10;
 
+    doc.setFont(undefined, 'normal');
     doc.setFontSize(12);
-    doc.text(`Dear Parent of ${student.fullName}`, 25, yPos);
+    doc.text(`Dear Parent of ${student.fullName} in Class ${student.homeroom}`, 25, yPos);
     yPos += 10;
 
     doc.text('Assalamu Aleikum', 25, yPos);
@@ -494,15 +496,8 @@
     doc.text('Sincerely,', 25, yPos);
     yPos += 10;
 
-    doc.setFont(undefined, 'normal');
-    doc.text('Mr. Louis Pienaar', 25, yPos);
-    yPos += 5;
-    doc.text('MYP English Teacher - Boys', 25, yPos);
-    yPos += 10;
-
-    doc.text('Mr. Atiq Salakh Uddin', 25, yPos);
-    yPos += 5;
-    doc.text('Head of Upper School - Boys (Grades 9-12)', 25, yPos);
+    doc.setFont(undefined, 'bold');
+    doc.text(`${teacherName}, MYP English Teacher - Boys | Mr. Atiq Salakh Uddin, Head of Upper School - Boys (Grades 9-12)`, 25, yPos);
 
     return doc;
 }
