@@ -311,15 +311,20 @@
         }
 
         function switchTab(tabName) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
 
-            document.querySelector(`button[onclick="switchTab('${tabName}')"]`).classList.add('active');
-            document.getElementById(`${tabName}Tab`).classList.add('active');
+    document.querySelector(`button[onclick="switchTab('${tabName}')"]`).classList.add('active');
+    document.getElementById(`${tabName}Tab`).classList.add('active');
 
-            if (tabName === 'engagement') loadEngagementData();
-            if (tabName === 'homework') loadHomeworkData();
-        }
+    // Add console logs for debugging
+    console.log(`Switching to tab: ${tabName}`);
+
+    if (tabName === 'engagement') loadEngagementData();
+    if (tabName === 'homework') {
+        // Force a reload of homework data each time the tab is switched
+        loadHomeworkData();
+    }
 
         async function loadLetterhead() {
             const response = await fetch('letterhead.png');
