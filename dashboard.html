@@ -345,15 +345,28 @@
             })).filter(student => student.fullName);
         }
 
-        async function fetchQuizData() {
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/quiz_attempts?select=*`, {
-                headers: { 
-                    'apikey': SUPABASE_KEY, 
-                    'Authorization': `Bearer ${SUPABASE_KEY}` 
-                }
-            });
-            return response.ok ? response.json() : [];
+       async function fetchQuizData() {
+    try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/quiz_attempts?select=*`, {
+            headers: { 
+                'apikey': SUPABASE_KEY, 
+                'Authorization': `Bearer ${SUPABASE_KEY}` 
+            }
+        });
+        
+        if (!response.ok) {
+            console.error('Failed to fetch quiz data:', response.status, response.statusText);
+            return [];
         }
+        
+        const data = await response.json();
+        console.log('Fetched Quiz Data:', data);
+        return data;
+    } catch (error) {
+        console.error('Error fetching quiz data:', error);
+        return [];
+    }
+}
 
         async function loadEngagementData() {
             try {
@@ -405,28 +418,34 @@
         }
 
         async function loadHomeworkData() {
-            try {
-                const [classListData, quizAttempts] = await Promise.all([
-                    loadClassListFromRepo(),
-                    fetchQuizData()
-                ]);
+    try {
+        const [classListData, quizAttempts] = await Promise.all([
+            loadClassListFromRepo(),
+            fetchQuizData()
+        ]);
 
-                const totalStudents = classListData.length;
-                const quizMap = new Map(quizAttempts.map(attempt => [attempt.student_name, attempt]));
+        console.log('Class List Data:', classListData);
+        console.log('Quiz Attempts:', quizAttempts);
 
-                studentsNeedingLetters = classListData.filter(student => {
-                    const attempt = quizMap.get(student.fullName);
-                    return !attempt || !attempt.completed || (attempt.score < 70);
-                });
+        const totalStudents = classListData.length;
+        const quizMap = new Map(quizAttempts.map(attempt => [attempt.student_name, attempt]));
 
-                document.getElementById('totalClassStudents').textContent = totalStudents;
-                document.getElementById('completedStudents').textContent = totalStudents - studentsNeedingLetters.length;
-                document.getElementById('incompleteStudents').textContent = studentsNeedingLetters.length;
-            } catch (error) {
-                console.error('Error loading homework data:', error);
-                alert('Failed to load student data.');
-            }
-        }
+        studentsNeedingLetters = classListData.filter(student => {
+            const attempt = quizMap.get(student.fullName);
+            console.log(`Student: ${student.fullName}, Attempt:`, attempt);
+            return !attempt || !attempt.completed || (attempt.score < 70);
+        });
+
+        console.log('Students Needing Letters:', studentsNeedingLetters);
+
+        document.getElementById('totalClassStudents').textContent = totalStudents;
+        document.getElementById('completedStudents').textContent = totalStudents - studentsNeedingLetters.length;
+        document.getElementById('incompleteStudents').textContent = studentsNeedingLetters.length;
+    } catch (error) {
+        console.error('Error loading homework data:', error);
+        alert('Failed to load student data.');
+    }
+}
 
     function generatePDFForStudent(student) {
     const teacherName = localStorage.getItem('teacherName') || 'Teacher';
