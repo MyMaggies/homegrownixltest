@@ -487,6 +487,30 @@
 
     return doc;
 }
+        async function generateAllPDFs() {
+    // Ensure homework data is loaded first
+    await loadHomeworkData();
+
+    if (!letterheadImage) {
+        await loadLetterhead();
+    }
+
+    if (studentsNeedingLetters.length === 0) {
+        alert('No students require homework letters at this time.');
+        return;
+    }
+
+    const zip = new JSZip();
+    const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    studentsNeedingLetters.forEach(student => {
+        const pdf = generatePDFForStudent(student);
+        zip.file(`${student.fullName.replace(/\s+/g, '_')}_letter.pdf`, pdf.output('blob'));
+    });
+
+    const content = await zip.generateAsync({ type: 'blob' });
+    saveAs(content, `Homework_Letters_${today}.zip`);
+}
         document.addEventListener('DOMContentLoaded', async () => {
             const savedTeacherName = localStorage.getItem('teacherName');
             if (savedTeacherName) {
