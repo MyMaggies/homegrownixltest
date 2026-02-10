@@ -428,15 +428,25 @@
             }
         }
 
-     function generatePDFForStudent(student) {
+    function generatePDFForStudent(student) {
     const teacherName = localStorage.getItem('teacherName') || 'Teacher';
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const doc = new jsPDF({ 
+        orientation: 'landscape', 
+        unit: 'mm', 
+        format: 'a4',
+        // Remove setMargins, instead use margins in addPage or initial config
+        margins: {
+            top: 25,
+            bottom: 25,
+            left: 25,
+            right: 25
+        }
+    });
     
     doc.addImage(letterheadImage, 'PNG', 0, 0, 297, 210);
     
     doc.setFontSize(12);
-    doc.setMargins(25, 25, 25, 25);
     
     let yPos = 50;
     doc.text(`Date: ${new Date().toLocaleDateString()}`, 25, yPos);
@@ -476,31 +486,6 @@
     doc.text('Head of Upper School - Boys (Grades 9-12)', 25, yPos);
 
     return doc;
-}
-
-async function generateAllPDFs() {
-    // Ensure homework data is loaded first
-    await loadHomeworkData();
-
-    if (!letterheadImage) {
-        await loadLetterhead();
-    }
-
-    if (studentsNeedingLetters.length === 0) {
-        alert('No students require homework letters at this time.');
-        return;
-    }
-
-    const zip = new JSZip();
-    const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-
-    studentsNeedingLetters.forEach(student => {
-        const pdf = generatePDFForStudent(student);
-        zip.file(`${student.fullName.replace(/\s+/g, '_')}_letter.pdf`, pdf.output('blob'));
-    });
-
-    const content = await zip.generateAsync({ type: 'blob' });
-    saveAs(content, `Homework_Letters_${today}.zip`);
 }
         document.addEventListener('DOMContentLoaded', async () => {
             const savedTeacherName = localStorage.getItem('teacherName');
